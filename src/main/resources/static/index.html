@@ -63,7 +63,11 @@
 
         <p class="menu-label">SẮP PHÁT TRIỂN</p>
 
-        <div class="nav-disabled">◷ Thời khóa biểu</div>
+
+        <button class="nav-item" data-page="schedule">
+            ◷ Thời khóa biểu
+        </button>
+
         <div class="nav-disabled">✦ Xếp lịch tự động</div>
         <div class="nav-disabled">◉ Trợ lý AI</div>
 
@@ -355,6 +359,48 @@
                 </div>
             </section>
 
+            <!-- TRANG THỜI KHÓA BIỂU -->
+            <section id="schedulePage" class="page hidden">
+
+                <div class="section-header">
+                    <div>
+                        <h2>Thời khóa biểu</h2>
+                        <p>Quản lý lịch học và phân phòng theo tuần.</p>
+                    </div>
+
+                    <button id="addSessionBtn" class="primary-btn">
+                        + Thêm buổi học
+                    </button>
+                </div>
+
+                <div class="panel">
+
+                    <div class="schedule-toolbar">
+
+                        <button id="prevWeekBtn" class="secondary-btn">
+                            ← Tuần trước
+                        </button>
+
+                        <input type="date" id="weekPicker"
+                               aria-label="Chọn ngày xem lịch">
+
+                        <button id="nextWeekBtn" class="secondary-btn">
+                            Tuần sau →
+                        </button>
+
+                    </div>
+
+                    <h3 id="scheduleWeekLabel"></h3>
+
+                    <div class="schedule-scroll">
+                        <div id="weekGrid" class="schedule-week"></div>
+                    </div>
+
+                    <p id="scheduleMessage" class="message"></p>
+
+                </div>
+            </section>
+
         </main>
     </div>
 </div>
@@ -635,6 +681,73 @@
         </div>
 
     </form>
+</dialog>
+
+<!-- FORM THÊM / SỬA LỊCH HỌC -->
+<dialog id="scheduleDialog" class="dialog">
+
+    <form id="scheduleForm">
+
+        <h2 id="scheduleFormTitle">Thêm buổi học</h2>
+
+        <label for="scheduleOffering">Lớp học phần</label>
+        <select id="scheduleOffering" required></select>
+
+        <label for="scheduleDate">Ngày học</label>
+        <input
+                id="scheduleDate"
+                type="date"
+                required
+        >
+
+        <label for="scheduleStart">Giờ bắt đầu</label>
+        <input
+                id="scheduleStart"
+                type="time"
+                value="07:00"
+                required
+        >
+
+        <label for="scheduleEnd">Giờ kết thúc</label>
+        <input
+                id="scheduleEnd"
+                type="time"
+                value="09:00"
+                required
+        >
+
+        <label for="scheduleRoom">Phòng học</label>
+        <select id="scheduleRoom" required></select>
+
+        <button
+                type="button"
+                id="findFreeRoomsBtn"
+                class="secondary-btn">
+            Tìm phòng trống phù hợp
+        </button>
+
+        <p id="freeRoomsResult" class="message"></p>
+
+        <p id="scheduleFormMessage" class="error"></p>
+
+        <div class="form-actions">
+            <button
+                    type="button"
+                    id="cancelSessionBtn"
+                    class="secondary-btn">
+                Hủy
+            </button>
+
+            <button
+                    type="submit"
+                    id="saveSessionBtn"
+                    class="primary-btn">
+                Lưu lịch học
+            </button>
+        </div>
+
+    </form>
+
 </dialog>
 
 </body>

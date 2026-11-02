@@ -151,6 +151,7 @@ function updateDashboard() {
 
 
 
+
 function showPage(pageName) {
 
     const pageTitles = {
@@ -159,7 +160,8 @@ function showPage(pageName) {
         teachers: "Quản lý giảng viên",
         groups: "Quản lý lớp sinh viên",
         courses: "Quản lý môn học",
-        offerings: "Quản lý lớp học phần"
+        offerings: "Quản lý lớp học phần",
+        schedule: "Thời khóa biểu"
     };
 
     document.querySelectorAll(".page").forEach(page => {
@@ -183,7 +185,9 @@ function showPage(pageName) {
     if (pageName === "groups") loadGroups();
     if (pageName === "courses") loadCourses();
     if (pageName === "offerings") loadOfferings();
+    if (pageName === "schedule") loadSchedule();
 }
+
 
 
 // 6. Mở form thêm phòng
@@ -1381,3 +1385,501 @@ document.getElementById("cancelOfferingBtn")
 
 document.getElementById("searchOffering")
     .addEventListener("input", renderOfferings);
+
+/* ========================================
+   MODULE THỜI KHÓA BIỂU
+======================================== */
+
+const SCHEDULE_API = "/api/schedule";
+
+let scheduleEntries = [];
+let scheduleOfferings = [];
+let scheduleRooms = [];
+let scheduleGroups = [];
+let editingSessionId = null;
+
+const weekPicker =
+    document.getElementById("weekPicker");
+
+const weekGrid =
+    document.getElementById("weekGrid");
+
+const scheduleDialog =
+    document.getElementById("scheduleDialog");
+
+const scheduleForm =
+    document.getElementById("scheduleForm");
+
+const scheduleMessage =
+    document.getElementById("scheduleMessage");
+
+const scheduleFormMessage =
+    document.getElementById("scheduleFormMessage");
+
+// 1. Chuyển Date thành YYYY-MM-DD theo giờ địa phương
+function localDateString(date) {
+
+    const year = date.getFullYear();
+
+    const month = String(
+        date.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+        date.getDate()
+    ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+// 2. Tìm ngày thứ Hai của một tuần
+function getMonday(dateString) {
+
+    const date = new Date(
+        dateString + "T12:00:00"
+    );
+
+    const day = date.getDay();
+    const diff = (day + 6) % 7;
+
+    date.setDate(date.getDate() - diff);
+    return date;
+}
+
+// 3. Tải lịch học theo tuần
+async function loadSchedule() {
+
+    if (!weekPicker.value) {
+        weekPicker.value = localDateString(new Date());
+    }
+
+    const monday = getMonday(weekPicker.value);
+    const weekStart = localDateString(monday);
+
+    scheduleMessage.textContent = "Đang tải lịch học...";
+
+    try {
+        scheduleEntries = await callApi(
+            `${SCHEDULE_API}?weekStart=${weekStart}`
+        );
+
+        scheduleMessage.textContent = "";
+        renderSchedule(monday);
+
+    } catch (error) {
+        scheduleMessage.textContent = error.message;
+    }
+}
+
+// 4. Hiển thị bảy ngày trong tuần
+function renderSchedule(monday) {
+
+    weekGrid.replaceChildren();
+
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+
+    document.getElementById("scheduleWeekLabel")
+        .textContent =
+        `Tuần ${localDateString(monday)} đến ` +
+        localDateString(sunday);
+
+    const dayNames = [
+        "Thứ Hai", "Thứ Ba", "Thứ Tư",
+        "Thứ Năm", "Thứ Sáu", "Thứ Bảy",
+        "Chủ Nhật"
+    ];
+
+    for (let i = 0; i < 7; i++) {
+
+        const date = new Date(monday);
+        date.setDate(date.getDate() + i);
+
+        const dateKey = localDateString(date);
+
+        const column = document.createElement("div");
+        column.className = "schedule-day";
+
+        const heading = document.createElement("div");
+        heading.className = "schedule-day-title";
+
+        heading.textContent =
+            `${dayNames[i]} - ${dateKey}`;
+
+        column.appendChild(heading);
+
+        const sessions = scheduleEntries
+            .filter(s => s.sessionDate === dateKey)
+            .sort((a, b) =>
+                a.startTime.localeCompare(b.startTime)
+            );
+
+        if (sessions.length === 0) {
+
+            const empty = document.createElement("p");
+            empty.className = "schedule-empty";
+            empty.textContent = "Chưa có lịch học.";
+
+            column.appendChild(empty);
+        }
+
+        sessions.forEach(session => {
+
+            const card = document.createElement("div");
+            card.className = "schedule-card";
+
+            const title = document.createElement("strong");
+            title.textContent = session.courseName;
+
+            const time = document.createElement("p");
+            time.textContent =
+                session.startTime.slice(0, 5) +
+                " - " +
+                session.endTime.slice(0, 5);
+
+            const room = document.createElement("p");
+            room.textContent =
+                "Phòng: " + session.roomCode;
+
+            const teacher = document.createElement("p");
+            teacher.textContent =
+                "GV: " + session.teacherName;
+
+            const group = document.createElement("p");
+            group.textContent =
+                "Lớp: " + session.groupCode;
+
+            const editBtn = document.createElement("button");
+            editBtn.textContent = "Sửa";
+            editBtn.onclick = () =>
+                openEditSession(session.id);
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Xóa";
+            deleteBtn.onclick = () =>
+                deleteSession(session.id);
+
+            card.append(
+                title, time, room, teacher,
+                group, editBtn, deleteBtn
+            );
+
+            column.appendChild(card);
+        });
+
+        weekGrid.appendChild(column);
+    }
+}
+
+// 5. Chuyển tuần
+function changeWeek(days) {
+
+    const current = weekPicker.value ||
+        localDateString(new Date());
+
+    const date = new Date(current + "T12:00:00");
+
+    date.setDate(date.getDate() + days);
+
+    weekPicker.value = localDateString(date);
+
+    loadSchedule();
+}
+
+// 6. Tạo option cho select
+function fillScheduleSelect(selectId, items, format) {
+
+    const select = document.getElementById(selectId);
+
+    select.replaceChildren();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Chọn --";
+
+    select.appendChild(placeholder);
+
+    items.forEach(item => {
+
+        const option = document.createElement("option");
+
+        option.value = String(item.id);
+        option.textContent = format(item);
+
+        select.appendChild(option);
+    });
+}
+
+// 7. Tải danh sách lớp học phần, phòng và lớp
+async function loadScheduleOptions() {
+
+    [
+        scheduleOfferings,
+        scheduleRooms,
+        scheduleGroups
+    ] = await Promise.all([
+        callApi("/api/catalog/offerings"),
+        callApi("/api/rooms"),
+        callApi("/api/catalog/groups")
+    ]);
+
+    fillScheduleSelect(
+        "scheduleOffering",
+        scheduleOfferings,
+        o => `${o.courseName} - ${o.groupCode} ` +
+            `(${o.teacherName} · ${o.semester})`
+    );
+
+    fillScheduleSelect(
+        "scheduleRoom",
+        scheduleRooms,
+        r => `${r.code} - ${r.capacity} chỗ`
+    );
+
+    if (!scheduleOfferings.length ||
+        !scheduleRooms.length ||
+        !scheduleGroups.length) {
+
+        throw new Error(
+            "Cần có học phần, phòng và lớp sinh viên"
+        );
+    }
+}
+
+// 8. Mở form tạo lịch học
+async function openAddSession() {
+
+    editingSessionId = null;
+    scheduleForm.reset();
+
+    document.getElementById("scheduleFormTitle")
+        .textContent = "Thêm buổi học";
+
+    scheduleFormMessage.textContent = "";
+    document.getElementById("freeRoomsResult")
+        .textContent = "";
+
+    try {
+        await loadScheduleOptions();
+
+        document.getElementById("scheduleDate").value =
+            weekPicker.value || localDateString(new Date());
+
+        document.getElementById("scheduleStart").value =
+            "07:00";
+
+        document.getElementById("scheduleEnd").value =
+            "09:00";
+
+        scheduleDialog.showModal();
+
+    } catch (error) {
+        scheduleMessage.textContent = error.message;
+    }
+}
+
+// 9. Mở form sửa lịch học
+async function openEditSession(id) {
+
+    const session = scheduleEntries.find(s => s.id === id);
+
+    if (!session) return;
+
+    try {
+        await loadScheduleOptions();
+
+        editingSessionId = id;
+
+        document.getElementById("scheduleFormTitle")
+            .textContent = "Sửa buổi học";
+
+        document.getElementById("scheduleOffering").value =
+            String(session.offeringId);
+
+        document.getElementById("scheduleRoom").value =
+            String(session.roomId);
+
+        document.getElementById("scheduleDate").value =
+            session.sessionDate;
+
+        document.getElementById("scheduleStart").value =
+            session.startTime.slice(0, 5);
+
+        document.getElementById("scheduleEnd").value =
+            session.endTime.slice(0, 5);
+
+        scheduleFormMessage.textContent = "";
+
+        document.getElementById("freeRoomsResult")
+            .textContent = "";
+
+        scheduleDialog.showModal();
+
+    } catch (error) {
+        scheduleMessage.textContent = error.message;
+    }
+}
+
+// 10. Tìm phòng trống phù hợp
+async function findFreeRooms() {
+
+    const offeringId = Number(
+        document.getElementById("scheduleOffering").value
+    );
+
+    const offering = scheduleOfferings.find(
+        o => o.id === offeringId
+    );
+
+    const date =
+        document.getElementById("scheduleDate").value;
+
+    const start =
+        document.getElementById("scheduleStart").value;
+
+    const end =
+        document.getElementById("scheduleEnd").value;
+
+    const result =
+        document.getElementById("freeRoomsResult");
+
+    if (!offering || !date || !start || !end ||
+        start >= end) {
+
+        result.textContent =
+            "Hãy chọn học phần, ngày và giờ hợp lệ.";
+        return;
+    }
+
+    const group = scheduleGroups.find(
+        g => g.code === offering.groupCode
+    );
+
+    if (!group) {
+        result.textContent =
+            "Không tìm thấy thông tin sĩ số lớp.";
+        return;
+    }
+
+    const params = new URLSearchParams({
+        date: date,
+        start: start,
+        end: end,
+        minCapacity: group.studentCount
+    });
+
+    result.textContent = "Đang tìm phòng trống...";
+
+    try {
+        const freeRooms = await callApi(
+            `${SCHEDULE_API}/available-rooms?${params}`
+        );
+
+        result.textContent = freeRooms.length
+            ? "Phòng phù hợp: " +
+            freeRooms.map(r => r.code).join(", ")
+            : "Không có phòng trống phù hợp.";
+
+    } catch (error) {
+        result.textContent = error.message;
+    }
+}
+
+// 11. Lưu lịch học
+scheduleForm.addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const data = {
+        offeringId: Number(
+            document.getElementById("scheduleOffering").value
+        ),
+        roomId: Number(
+            document.getElementById("scheduleRoom").value
+        ),
+        sessionDate:
+        document.getElementById("scheduleDate").value,
+        startTime:
+        document.getElementById("scheduleStart").value,
+        endTime:
+        document.getElementById("scheduleEnd").value
+    };
+
+    const editing = editingSessionId !== null;
+
+    const url = editing
+        ? `${SCHEDULE_API}/${editingSessionId}`
+        : SCHEDULE_API;
+
+    const saveBtn =
+        document.getElementById("saveSessionBtn");
+
+    saveBtn.disabled = true;
+    scheduleFormMessage.textContent = "";
+
+    try {
+        await callApi(url, {
+            method: editing ? "PUT" : "POST",
+            body: JSON.stringify(data)
+        });
+
+        scheduleDialog.close();
+
+        // Tự chuyển đến tuần chứa buổi vừa lưu
+        weekPicker.value = data.sessionDate;
+
+        await loadSchedule();
+
+        scheduleMessage.textContent = editing
+            ? "Đã cập nhật lịch học!"
+            : "Đã tạo lịch học!";
+
+    } catch (error) {
+        scheduleFormMessage.textContent = error.message;
+
+    } finally {
+        saveBtn.disabled = false;
+    }
+});
+
+// 12. Xóa lịch học
+async function deleteSession(id) {
+
+    const confirmed = confirm(
+        "Bạn có chắc muốn xóa buổi học này?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+        await callApi(`${SCHEDULE_API}/${id}`, {
+            method: "DELETE"
+        });
+
+        await loadSchedule();
+
+        scheduleMessage.textContent =
+            "Đã xóa buổi học!";
+
+    } catch (error) {
+        scheduleMessage.textContent = error.message;
+    }
+}
+
+// 13. Gắn sự kiện cho giao diện
+document.getElementById("addSessionBtn")
+    .addEventListener("click", openAddSession);
+
+document.getElementById("cancelSessionBtn")
+    .addEventListener("click", () => scheduleDialog.close());
+
+document.getElementById("prevWeekBtn")
+    .addEventListener("click", () => changeWeek(-7));
+
+document.getElementById("nextWeekBtn")
+    .addEventListener("click", () => changeWeek(7));
+
+weekPicker.addEventListener("change", loadSchedule);
+
+document.getElementById("findFreeRoomsBtn")
+    .addEventListener("click", findFreeRooms);
