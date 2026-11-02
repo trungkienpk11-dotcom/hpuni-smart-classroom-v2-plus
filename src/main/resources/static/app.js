@@ -149,16 +149,18 @@ function updateDashboard() {
 // 5. Chuyển trang Sidebar
 
 
+
 function showPage(pageName) {
 
     const pageTitles = {
         dashboard: "Tổng quan",
         rooms: "Quản lý phòng học",
         teachers: "Quản lý giảng viên",
-        groups: "Quản lý lớp sinh viên"
+        groups: "Quản lý lớp sinh viên",
+        courses: "Quản lý môn học"
     };
 
-    // Hiển thị đúng trang được chọn
+    // Hiện đúng trang đang chọn
     document.querySelectorAll(".page").forEach(page => {
 
         page.classList.toggle(
@@ -167,11 +169,11 @@ function showPage(pageName) {
         );
     });
 
-    // Cập nhật tiêu đề
+    // Đổi tiêu đề phía trên
     document.getElementById("pageTitle").textContent =
         pageTitles[pageName] || "HPUNI Smart Classroom";
 
-    // Đánh dấu mục Sidebar đang chọn
+    // Đánh dấu menu được chọn
     document.querySelectorAll(".nav-item").forEach(btn => {
 
         btn.classList.toggle(
@@ -180,15 +182,22 @@ function showPage(pageName) {
         );
     });
 
-    // Tải dữ liệu theo từng trang
+    // Tải dữ liệu trang giảng viên
     if (pageName === "teachers") {
         loadTeachers();
     }
 
+    // Tải dữ liệu trang lớp sinh viên
     if (pageName === "groups") {
         loadGroups();
     }
+
+    // Tải dữ liệu trang môn học
+    if (pageName === "courses") {
+        loadCourses();
+    }
 }
+
 
 
 
@@ -804,3 +813,254 @@ document.getElementById("cancelGroupBtn")
 
 document.getElementById("searchGroup")
     .addEventListener("input", renderGroups);
+
+/* =========================================
+   MODULE QUẢN LÝ MÔN HỌC
+========================================= */
+
+const COURSE_API = "/api/catalog/courses";
+
+let courses = [];
+let editingCourseId = null;
+
+const courseTable =
+    document.getElementById("courseTable");
+
+const courseDialog =
+    document.getElementById("courseDialog");
+
+const courseForm =
+    document.getElementById("courseForm");
+
+const courseMessage =
+    document.getElementById("courseMessage");
+
+const courseFormMessage =
+    document.getElementById("courseFormMessage");
+
+// 1. Tải danh sách môn học
+async function loadCourses() {
+
+    courseMessage.textContent = "Đang tải môn học...";
+
+    try {
+        courses = await callApi(COURSE_API);
+
+        courseMessage.textContent = "";
+        renderCourses();
+
+    } catch (error) {
+        courseMessage.textContent = error.message;
+    }
+}
+
+// 2. Hiển thị danh sách môn học
+function renderCourses() {
+
+    const keyword = document
+        .getElementById("searchCourse")
+        .value.trim().toLowerCase();
+
+    const filtered = courses.filter(course =>
+        course.code.toLowerCase().includes(keyword) ||
+        course.name.toLowerCase().includes(keyword)
+    );
+
+    courseTable.replaceChildren();
+
+    if (filtered.length === 0) {
+
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 4;
+        cell.textContent = "Không tìm thấy môn học.";
+
+        row.appendChild(cell);
+        courseTable.appendChild(row);
+
+        return;
+    }
+
+    filtered.forEach(course => {
+
+        const row = document.createElement("tr");
+
+        // Các cột dữ liệu
+        const values = [
+            course.code,
+            course.name,
+            course.credits
+        ];
+
+        values.forEach(value => {
+
+            const cell = document.createElement("td");
+            cell.textContent = value;
+
+            row.appendChild(cell);
+        });
+
+        // Cột thao tác
+        const actionCell = document.createElement("td");
+        const actions = document.createElement("div");
+
+        actions.className = "table-actions";
+
+        // Nút sửa
+        const editBtn = document.createElement("button");
+
+        editBtn.textContent = "Sửa";
+        editBtn.className = "edit-btn";
+
+        editBtn.onclick = () => openEditCourse(course.id);
+
+        // Nút xóa
+        const deleteBtn = document.createElement("button");
+
+        deleteBtn.textContent = "Xóa";
+        deleteBtn.className = "danger-btn";
+
+        deleteBtn.onclick = () => deleteCourse(course.id);
+
+        actions.append(editBtn, deleteBtn);
+
+        actionCell.appendChild(actions);
+        row.appendChild(actionCell);
+
+        courseTable.appendChild(row);
+    });
+}
+
+// 3. Mở form thêm môn học
+function openAddCourse() {
+
+    editingCourseId = null;
+    courseForm.reset();
+
+    document.getElementById("courseFormTitle")
+        .textContent = "Thêm môn học";
+
+    courseFormMessage.textContent = "";
+    courseDialog.showModal();
+}
+
+// 4. Mở form sửa môn học
+function openEditCourse(id) {
+
+    const course = courses.find(c => c.id === id);
+
+    if (!course) {
+        alert("Không tìm thấy môn học.");
+        return;
+    }
+
+    editingCourseId = id;
+
+    document.getElementById("courseFormTitle")
+        .textContent = "Cập nhật môn học";
+
+    document.getElementById("courseCode").value =
+        course.code;
+
+    document.getElementById("courseName").value =
+        course.name;
+
+    document.getElementById("courseCredits").value =
+        course.credits;
+
+    courseFormMessage.textContent = "";
+    courseDialog.showModal();
+}
+
+// 5. Lưu môn học
+courseForm.addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const courseData = {
+
+        code: document.getElementById("courseCode")
+            .value.trim(),
+
+        name: document.getElementById("courseName")
+            .value.trim(),
+
+        credits: Number(
+            document.getElementById("courseCredits").value
+        )
+    };
+
+    const editing = editingCourseId !== null;
+
+    const url = editing
+        ? `${COURSE_API}/${editingCourseId}`
+        : COURSE_API;
+
+    const saveBtn =
+        document.getElementById("saveCourseBtn");
+
+    saveBtn.disabled = true;
+    courseFormMessage.textContent = "";
+
+    try {
+        await callApi(url, {
+            method: editing ? "PUT" : "POST",
+            body: JSON.stringify(courseData)
+        });
+
+        courseDialog.close();
+        await loadCourses();
+
+        courseMessage.textContent = editing
+            ? "Đã cập nhật môn học thành công!"
+            : "Đã thêm môn học thành công!";
+
+    } catch (error) {
+        courseFormMessage.textContent = error.message;
+
+    } finally {
+        saveBtn.disabled = false;
+    }
+});
+
+// 6. Xóa môn học
+async function deleteCourse(id) {
+
+    const course = courses.find(c => c.id === id);
+
+    if (!course) return;
+
+    const confirmed = confirm(
+        `Bạn có chắc muốn xóa môn ${course.name}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        await callApi(`${COURSE_API}/${id}`, {
+            method: "DELETE"
+        });
+
+        await loadCourses();
+
+        courseMessage.textContent =
+            "Đã xóa môn học thành công!";
+
+    } catch (error) {
+        courseMessage.textContent = error.message;
+    }
+}
+
+// 7. Gắn sự kiện cho các nút
+document.getElementById("addCourseBtn")
+    .addEventListener("click", openAddCourse);
+
+document.getElementById("cancelCourseBtn")
+    .addEventListener(
+        "click",
+        () => courseDialog.close()
+    );
+
+document.getElementById("searchCourse")
+    .addEventListener("input", renderCourses);
