@@ -38,6 +38,11 @@
                     data-page="rooms">
                 ▦ Quản lý phòng học
             </button>
+
+            <button class="nav-item"
+                    data-page="teachers">
+                ♙ Quản lý giảng viên
+            </button>
         </nav>
 
         <p class="menu-label">SẮP PHÁT TRIỂN</p>
@@ -154,6 +159,48 @@
 
             </section>
 
+            <section id="teachersPage" class="page hidden">
+
+                <div class="section-header">
+                    <div>
+                        <h2>Quản lý giảng viên</h2>
+                        <p>Danh sách giảng viên của khoa.</p>
+                    </div>
+
+                    <button id="addTeacherBtn" class="primary-btn">
+                        + Thêm giảng viên
+                    </button>
+                </div>
+
+                <div class="panel">
+
+                    <input
+                            type="search"
+                            id="searchTeacher"
+                            placeholder="Tìm mã, tên hoặc email giảng viên..."
+                            aria-label="Tìm kiếm giảng viên"
+                    >
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Mã giảng viên</th>
+                                <th>Họ và tên</th>
+                                <th>Email</th>
+                                <th>Thao tác</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="teacherTable"></tbody>
+                        </table>
+                    </div>
+
+                    <p id="teacherMessage" class="message"></p>
+                </div>
+
+            </section>
+
         </main>
     </div>
 </div>
@@ -217,4 +264,45 @@
 </dialog>
 
 </body>
+
+<dialog id="teacherDialog" class="dialog">
+
+    <form id="teacherForm">
+        <h2 id="teacherFormTitle">Thêm giảng viên</h2>
+
+        <label for="teacherCode">Mã giảng viên</label>
+        <input id="teacherCode"
+               required
+               maxlength="20">
+
+        <label for="teacherName">Họ và tên</label>
+        <input id="teacherName"
+               required
+               maxlength="100">
+
+        <label for="teacherEmail">Email</label>
+        <input id="teacherEmail"
+               type="email"
+               maxlength="120"
+               required>
+
+        <p id="teacherFormMessage" class="error"></p>
+
+        <div class="form-actions">
+            <button type="button"
+                    id="cancelTeacherBtn"
+                    class="secondary-btn">
+                Hủy
+            </button>
+
+            <button type="submit"
+                    id="saveTeacherBtn"
+                    class="primary-btn">
+                Lưu giảng viên
+            </button>
+        </div>
+    </form>
+
+</dialog>
+
 </html>

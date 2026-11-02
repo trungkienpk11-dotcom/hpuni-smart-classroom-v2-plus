@@ -423,3 +423,34 @@ td {
         align-items: flex-start;
     }
 }
+#searchTeacher {
+    width: 100%;
+    max-width: 420px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: white;
+}
+
+#teacherForm {
+    display: grid;
+    gap: 12px;
+}
+
+#teacherForm h2 {
+    margin: 0 0 10px;
+}
+
+#teacherForm label {
+    font-size: 14px;
+}
+
+#teacherForm input {
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: white;
+}

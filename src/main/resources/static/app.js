@@ -147,18 +147,24 @@ function updateDashboard() {
 }
 
 // 5. Chuyển trang Sidebar
+
 function showPage(pageName) {
 
-    const isDashboard = pageName === "dashboard";
+    const pageTitles = {
+        dashboard: "Tổng quan",
+        rooms: "Quản lý phòng học",
+        teachers: "Quản lý giảng viên"
+    };
 
-    document.getElementById("dashboardPage")
-        .classList.toggle("hidden", !isDashboard);
-
-    document.getElementById("roomsPage")
-        .classList.toggle("hidden", isDashboard);
+    document.querySelectorAll(".page").forEach(page => {
+        page.classList.toggle(
+            "hidden",
+            page.id !== pageName + "Page"
+        );
+    });
 
     document.getElementById("pageTitle").textContent =
-        isDashboard ? "Tổng quan" : "Quản lý phòng học";
+        pageTitles[pageName] || "HPUNI Smart Classroom";
 
     document.querySelectorAll(".nav-item").forEach(btn => {
         btn.classList.toggle(
@@ -166,7 +172,12 @@ function showPage(pageName) {
             btn.dataset.page === pageName
         );
     });
+
+    if (pageName === "teachers") {
+        loadTeachers();
+    }
 }
+
 
 // 6. Mở form thêm phòng
 function openAddForm() {
@@ -308,3 +319,224 @@ document.getElementById("searchRoom")
 // 11. Khởi động trang
 showPage("dashboard");
 loadRooms();
+
+
+const TEACHER_API = "/api/catalog/teachers";
+
+let teachers = [];
+let editingTeacherId = null;
+
+const teacherTable =
+    document.getElementById("teacherTable");
+
+const teacherDialog =
+    document.getElementById("teacherDialog");
+
+const teacherForm =
+    document.getElementById("teacherForm");
+
+const teacherMessage =
+    document.getElementById("teacherMessage");
+
+const teacherFormMessage =
+    document.getElementById("teacherFormMessage");
+
+// 1. Lấy danh sách giảng viên
+async function loadTeachers() {
+
+    teacherMessage.textContent = "Đang tải dữ liệu...";
+
+    try {
+        teachers = await callApi(TEACHER_API);
+
+        teacherMessage.textContent = "";
+        renderTeachers();
+
+    } catch (error) {
+        teacherMessage.textContent = error.message;
+    }
+}
+
+// 2. Hiển thị giảng viên lên bảng
+function renderTeachers() {
+
+    const keyword = document
+        .getElementById("searchTeacher")
+        .value.trim().toLowerCase();
+
+    const filtered = teachers.filter(t =>
+        t.code.toLowerCase().includes(keyword) ||
+        t.fullName.toLowerCase().includes(keyword) ||
+        t.email.toLowerCase().includes(keyword)
+    );
+
+    teacherTable.replaceChildren();
+
+    if (filtered.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 4;
+        cell.textContent = "Không tìm thấy giảng viên.";
+
+        row.appendChild(cell);
+        teacherTable.appendChild(row);
+        return;
+    }
+
+    filtered.forEach(teacher => {
+
+        const row = document.createElement("tr");
+
+        [
+            teacher.code,
+            teacher.fullName,
+            teacher.email
+        ].forEach(value => {
+
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+        const actionCell = document.createElement("td");
+        const actions = document.createElement("div");
+        actions.className = "table-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Sửa";
+        editBtn.className = "edit-btn";
+        editBtn.onclick = () => openEditTeacher(teacher.id);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Xóa";
+        deleteBtn.className = "danger-btn";
+        deleteBtn.onclick = () => deleteTeacher(teacher.id);
+
+        actions.append(editBtn, deleteBtn);
+        actionCell.appendChild(actions);
+        row.appendChild(actionCell);
+
+        teacherTable.appendChild(row);
+    });
+}
+
+// 3. Mở form thêm giảng viên
+function openAddTeacher() {
+
+    editingTeacherId = null;
+    teacherForm.reset();
+
+    document.getElementById("teacherFormTitle")
+        .textContent = "Thêm giảng viên";
+
+    teacherFormMessage.textContent = "";
+    teacherDialog.showModal();
+}
+
+// 4. Mở form sửa giảng viên
+function openEditTeacher(id) {
+
+    const teacher = teachers.find(t => t.id === id);
+
+    if (!teacher) return;
+
+    editingTeacherId = id;
+
+    document.getElementById("teacherFormTitle")
+        .textContent = "Sửa giảng viên";
+
+    document.getElementById("teacherCode").value =
+        teacher.code;
+
+    document.getElementById("teacherName").value =
+        teacher.fullName;
+
+    document.getElementById("teacherEmail").value =
+        teacher.email;
+
+    teacherFormMessage.textContent = "";
+    teacherDialog.showModal();
+}
+
+// 5. Lưu giảng viên
+teacherForm.addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const data = {
+        code: document.getElementById("teacherCode")
+            .value.trim(),
+
+        fullName: document.getElementById("teacherName")
+            .value.trim(),
+
+        email: document.getElementById("teacherEmail")
+            .value.trim()
+    };
+
+    const editing = editingTeacherId !== null;
+
+    const url = editing
+        ? `${TEACHER_API}/${editingTeacherId}`
+        : TEACHER_API;
+
+    const saveBtn =
+        document.getElementById("saveTeacherBtn");
+
+    saveBtn.disabled = true;
+    teacherFormMessage.textContent = "";
+
+    try {
+        await callApi(url, {
+            method: editing ? "PUT" : "POST",
+            body: JSON.stringify(data)
+        });
+
+        teacherDialog.close();
+        await loadTeachers();
+
+        teacherMessage.textContent = editing
+            ? "Đã cập nhật giảng viên!"
+            : "Đã thêm giảng viên!";
+
+    } catch (error) {
+        teacherFormMessage.textContent = error.message;
+
+    } finally {
+        saveBtn.disabled = false;
+    }
+});
+
+// 6. Xóa giảng viên
+async function deleteTeacher(id) {
+
+    const teacher = teachers.find(t => t.id === id);
+    if (!teacher) return;
+
+    if (!confirm(
+        `Bạn có chắc muốn xóa giảng viên ${teacher.fullName}?`
+    )) return;
+
+    try {
+        await callApi(`${TEACHER_API}/${id}`, {
+            method: "DELETE"
+        });
+
+        await loadTeachers();
+        teacherMessage.textContent = "Đã xóa giảng viên!";
+
+    } catch (error) {
+        teacherMessage.textContent = error.message;
+    }
+}
+
+// 7. Gắn sự kiện
+document.getElementById("addTeacherBtn")
+    .addEventListener("click", openAddTeacher);
+
+document.getElementById("cancelTeacherBtn")
+    .addEventListener("click", () => teacherDialog.close());
+
+document.getElementById("searchTeacher")
+    .addEventListener("input", renderTeachers);
