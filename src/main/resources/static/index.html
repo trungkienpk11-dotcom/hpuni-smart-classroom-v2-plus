@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>HPUNI Smart Classroom</title>
+
+    <link rel="stylesheet" href="/style.css">
+    <script src="/app.js" defer></script>
+</head>
+
+<body>
+<div class="app">
+
+    <!-- THANH ĐIỀU HƯỚNG -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-logo">HP</div>
+            <div>
+                <h2>HPUNI</h2>
+                <p>Smart Classroom</p>
+            </div>
+        </div>
+
+        <p class="menu-label">TỔNG QUAN</p>
+
+        <nav>
+            <button class="nav-item active"
+                    data-page="dashboard">
+                ◫ Tổng quan
+            </button>
+
+            <button class="nav-item"
+                    data-page="rooms">
+                ▦ Quản lý phòng học
+            </button>
+        </nav>
+
+        <p class="menu-label">SẮP PHÁT TRIỂN</p>
+
+        <div class="nav-disabled">◷ Thời khóa biểu</div>
+        <div class="nav-disabled">✦ Xếp lịch tự động</div>
+        <div class="nav-disabled">◉ Trợ lý AI</div>
+
+        <div class="sidebar-footer">
+            Dự án học tập HPUNI
+        </div>
+
+    </aside>
+
+    <!-- KHU VỰC NỘI DUNG -->
+    <div class="workspace">
+
+        <header class="topbar">
+            <div>
+                <span class="top-caption">QUẢN LÝ ĐÀO TẠO</span>
+                <h1 id="pageTitle">Tổng quan</h1>
+            </div>
+
+            <div class="user-profile">
+                <span class="avatar">AD</span>
+                <span>Quản trị viên</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+
+            <!-- TRANG DASHBOARD -->
+            <section id="dashboardPage" class="page">
+
+                <div class="welcome">
+                    <h2>Chào mừng đến HPUNI Smart Classroom</h2>
+                    <p>
+                        Hệ thống quản lý lịch và phòng học
+                        thông minh, tích hợp AI.
+                    </p>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <p>Tổng phòng học</p>
+                        <h2 id="totalRooms">0</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <p>Phòng có máy chiếu</p>
+                        <h2 id="projectorRooms">0</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <p>Phòng máy tính</p>
+                        <h2 id="computerRooms">0</h2>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Thao tác nhanh</h3>
+                    <p>Quản lý cơ sở vật chất của khoa.</p>
+
+                    <button id="goRooms" class="primary-btn">
+                        Mở quản lý phòng học
+                    </button>
+                </div>
+            </section>
+
+            <!-- TRANG QUẢN LÝ PHÒNG -->
+            <section id="roomsPage" class="page hidden">
+
+                <div class="section-header">
+                    <div>
+                        <h2>Danh sách phòng học</h2>
+                        <p>Quản lý thông tin và thiết bị phòng.</p>
+                    </div>
+
+                    <button id="addRoomBtn" class="primary-btn">
+                        + Thêm phòng học
+                    </button>
+                </div>
+
+                <div class="panel">
+
+                    <input
+                            type="search"
+                            id="searchRoom"
+                            placeholder="Tìm theo mã hoặc tên phòng..."
+                            aria-label="Tìm kiếm phòng học"
+                    >
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Mã phòng</th>
+                                <th>Tên phòng</th>
+                                <th>Sức chứa</th>
+                                <th>Loại phòng</th>
+                                <th>Máy chiếu</th>
+                                <th>Máy tính</th>
+                                <th>Thao tác</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="roomTable"></tbody>
+                        </table>
+                    </div>
+
+                    <p id="roomMessage" class="message"></p>
+
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<!-- FORM THÊM / SỬA PHÒNG -->
+<dialog id="roomDialog" class="dialog">
+
+    <form id="roomForm">
+        <h2 id="formTitle">Thêm phòng học</h2>
+
+        <label for="code">Mã phòng</label>
+        <input id="code" required maxlength="20">
+
+        <label for="name">Tên phòng</label>
+        <input id="name" required maxlength="100">
+
+        <label for="capacity">Sức chứa</label>
+        <input id="capacity"
+               type="number"
+               min="1"
+               max="1000"
+               required>
+
+        <label for="roomType">Loại phòng</label>
+        <select id="roomType">
+            <option value="NORMAL">Phòng thường</option>
+            <option value="COMPUTER_LAB">Phòng máy</option>
+            <option value="LECTURE_HALL">Hội trường</option>
+        </select>
+
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" id="projector">
+                Có máy chiếu
+            </label>
+
+            <label>
+                <input type="checkbox" id="computers">
+                Có máy tính
+            </label>
+        </div>
+
+        <p id="formMessage" class="error"></p>
+
+        <div class="form-actions">
+            <button type="button"
+                    id="cancelBtn"
+                    class="secondary-btn">
+                Hủy
+            </button>
+
+            <button type="submit"
+                    id="saveBtn"
+                    class="primary-btn">
+                Lưu phòng
+            </button>
+        </div>
+
+    </form>
+
+</dialog>
+
+</body>
+</html>
