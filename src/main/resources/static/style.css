@@ -544,3 +544,49 @@ td {
     outline: 2px solid var(--primary);
     outline-offset: 1px;
 }
+
+/* QUẢN LÝ LỚP HỌC PHẦN */
+
+#searchOffering {
+    width: 100%;
+    max-width: 440px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    background: var(--bg);
+    color: white;
+}
+
+#offeringForm {
+    display: grid;
+    gap: 12px;
+}
+
+#offeringForm h2 {
+    margin: 0 0 10px;
+}
+
+#offeringForm label {
+    font-size: 14px;
+}
+
+#offeringForm input,
+#offeringForm select {
+    width: 100%;
+    padding: 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    background: var(--bg);
+    color: white;
+}
+
+#offeringForm input:focus,
+#offeringForm select:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}

@@ -150,6 +150,7 @@ function updateDashboard() {
 
 
 
+
 function showPage(pageName) {
 
     const pageTitles = {
@@ -157,48 +158,32 @@ function showPage(pageName) {
         rooms: "Quản lý phòng học",
         teachers: "Quản lý giảng viên",
         groups: "Quản lý lớp sinh viên",
-        courses: "Quản lý môn học"
+        courses: "Quản lý môn học",
+        offerings: "Quản lý lớp học phần"
     };
 
-    // Hiện đúng trang đang chọn
     document.querySelectorAll(".page").forEach(page => {
-
         page.classList.toggle(
             "hidden",
             page.id !== pageName + "Page"
         );
     });
 
-    // Đổi tiêu đề phía trên
     document.getElementById("pageTitle").textContent =
         pageTitles[pageName] || "HPUNI Smart Classroom";
 
-    // Đánh dấu menu được chọn
     document.querySelectorAll(".nav-item").forEach(btn => {
-
         btn.classList.toggle(
             "active",
             btn.dataset.page === pageName
         );
     });
 
-    // Tải dữ liệu trang giảng viên
-    if (pageName === "teachers") {
-        loadTeachers();
-    }
-
-    // Tải dữ liệu trang lớp sinh viên
-    if (pageName === "groups") {
-        loadGroups();
-    }
-
-    // Tải dữ liệu trang môn học
-    if (pageName === "courses") {
-        loadCourses();
-    }
+    if (pageName === "teachers") loadTeachers();
+    if (pageName === "groups") loadGroups();
+    if (pageName === "courses") loadCourses();
+    if (pageName === "offerings") loadOfferings();
 }
-
-
 
 
 // 6. Mở form thêm phòng
@@ -1064,3 +1049,335 @@ document.getElementById("cancelCourseBtn")
 
 document.getElementById("searchCourse")
     .addEventListener("input", renderCourses);
+
+/* =======================================
+   QUẢN LÝ LỚP HỌC PHẦN
+======================================= */
+
+const OFFERING_API = "/api/catalog/offerings";
+
+let offerings = [];
+let editingOfferingId = null;
+
+const offeringTable =
+    document.getElementById("offeringTable");
+
+const offeringDialog =
+    document.getElementById("offeringDialog");
+
+const offeringForm =
+    document.getElementById("offeringForm");
+
+const offeringMessage =
+    document.getElementById("offeringMessage");
+
+const offeringFormMessage =
+    document.getElementById("offeringFormMessage");
+
+// 1. Tải danh sách lớp học phần
+async function loadOfferings() {
+
+    offeringMessage.textContent = "Đang tải dữ liệu...";
+
+    try {
+        offerings = await callApi(OFFERING_API);
+        offeringMessage.textContent = "";
+        renderOfferings();
+
+    } catch (error) {
+        offeringMessage.textContent = error.message;
+    }
+}
+
+// 2. Hiển thị dữ liệu lên bảng
+function renderOfferings() {
+
+    const keyword = document.getElementById("searchOffering")
+        .value.trim().toLowerCase();
+
+    const filtered = offerings.filter(o =>
+        [
+            o.courseCode, o.courseName,
+            o.teacherName, o.groupCode,
+            o.semester, o.academicYear
+        ].some(value =>
+            String(value).toLowerCase().includes(keyword)
+        )
+    );
+
+    offeringTable.replaceChildren();
+
+    if (filtered.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 8;
+        cell.textContent = "Không tìm thấy lớp học phần.";
+
+        row.appendChild(cell);
+        offeringTable.appendChild(row);
+        return;
+    }
+
+    filtered.forEach(o => {
+
+        const row = document.createElement("tr");
+
+        const values = [
+            o.courseCode,
+            o.courseName,
+            o.teacherName,
+            o.groupCode,
+            o.semester,
+            o.academicYear,
+            o.sessionsPerWeek
+        ];
+
+        values.forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+        const actionCell = document.createElement("td");
+        const actions = document.createElement("div");
+
+        actions.className = "table-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Sửa";
+        editBtn.className = "edit-btn";
+        editBtn.onclick = () => openEditOffering(o.id);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Xóa";
+        deleteBtn.className = "danger-btn";
+        deleteBtn.onclick = () => deleteOffering(o.id);
+
+        actions.append(editBtn, deleteBtn);
+        actionCell.appendChild(actions);
+        row.appendChild(actionCell);
+
+        offeringTable.appendChild(row);
+    });
+}
+
+// 3. Tạo danh sách lựa chọn trong select
+function fillSelect(selectId, data, labelFunction) {
+
+    const select = document.getElementById(selectId);
+    select.replaceChildren();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Chọn --";
+    select.appendChild(placeholder);
+
+    data.forEach(item => {
+        const option = document.createElement("option");
+        option.value = String(item.id);
+        option.textContent = labelFunction(item);
+        select.appendChild(option);
+    });
+}
+
+// 4. Tải môn học, giảng viên, lớp sinh viên
+async function loadOfferingOptions() {
+
+    const [courseItems, teacherItems, groupItems] =
+        await Promise.all([
+            callApi("/api/catalog/courses"),
+            callApi("/api/catalog/teachers"),
+            callApi("/api/catalog/groups")
+        ]);
+
+    fillSelect(
+        "offeringCourse",
+        courseItems,
+        c => `${c.code} - ${c.name}`
+    );
+
+    fillSelect(
+        "offeringTeacher",
+        teacherItems,
+        t => `${t.code} - ${t.fullName}`
+    );
+
+    fillSelect(
+        "offeringGroup",
+        groupItems,
+        g => `${g.code} - ${g.name}`
+    );
+
+    if (!courseItems.length ||
+        !teacherItems.length ||
+        !groupItems.length) {
+
+        throw new Error(
+            "Cần có môn học, giảng viên và lớp sinh viên"
+        );
+    }
+}
+
+// 5. Mở form tạo lớp học phần
+async function openAddOffering() {
+
+    editingOfferingId = null;
+    offeringForm.reset();
+
+    document.getElementById("offeringFormTitle")
+        .textContent = "Tạo lớp học phần";
+
+    offeringFormMessage.textContent = "";
+    offeringMessage.textContent = "";
+
+    try {
+        await loadOfferingOptions();
+
+        document.getElementById("offeringYear").value =
+            "2026-2027";
+
+        document.getElementById("offeringSessions").value = 2;
+
+        offeringDialog.showModal();
+
+    } catch (error) {
+        offeringMessage.textContent = error.message;
+    }
+}
+
+// 6. Mở form sửa phân công
+async function openEditOffering(id) {
+
+    offeringMessage.textContent = "";
+
+    try {
+        const [data] = await Promise.all([
+            callApi(`${OFFERING_API}/${id}`),
+            loadOfferingOptions()
+        ]);
+
+        editingOfferingId = id;
+
+        document.getElementById("offeringFormTitle")
+            .textContent = "Sửa lớp học phần";
+
+        document.getElementById("offeringCourse").value =
+            String(data.courseId);
+
+        document.getElementById("offeringTeacher").value =
+            String(data.teacherId);
+
+        document.getElementById("offeringGroup").value =
+            String(data.groupId);
+
+        document.getElementById("offeringSemester").value =
+            data.semester;
+
+        document.getElementById("offeringYear").value =
+            data.academicYear;
+
+        document.getElementById("offeringSessions").value =
+            data.sessionsPerWeek;
+
+        offeringFormMessage.textContent = "";
+        offeringDialog.showModal();
+
+    } catch (error) {
+        offeringMessage.textContent = error.message;
+    }
+}
+
+// 7. Lưu phân công
+offeringForm.addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const data = {
+        courseId: Number(
+            document.getElementById("offeringCourse").value
+        ),
+        teacherId: Number(
+            document.getElementById("offeringTeacher").value
+        ),
+        groupId: Number(
+            document.getElementById("offeringGroup").value
+        ),
+        semester:
+        document.getElementById("offeringSemester").value,
+        academicYear:
+            document.getElementById("offeringYear").value.trim(),
+        sessionsPerWeek: Number(
+            document.getElementById("offeringSessions").value
+        )
+    };
+
+    const editing = editingOfferingId !== null;
+
+    const url = editing
+        ? `${OFFERING_API}/${editingOfferingId}`
+        : OFFERING_API;
+
+    const saveBtn =
+        document.getElementById("saveOfferingBtn");
+
+    saveBtn.disabled = true;
+    offeringFormMessage.textContent = "";
+
+    try {
+        await callApi(url, {
+            method: editing ? "PUT" : "POST",
+            body: JSON.stringify(data)
+        });
+
+        offeringDialog.close();
+        await loadOfferings();
+
+        offeringMessage.textContent = editing
+            ? "Đã cập nhật lớp học phần!"
+            : "Đã tạo lớp học phần!";
+
+    } catch (error) {
+        offeringFormMessage.textContent = error.message;
+
+    } finally {
+        saveBtn.disabled = false;
+    }
+});
+
+// 8. Xóa lớp học phần
+async function deleteOffering(id) {
+
+    const offering = offerings.find(o => o.id === id);
+    if (!offering) return;
+
+    const confirmed = confirm(
+        `Xóa phân công ${offering.courseName} - ` +
+        `${offering.groupCode}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        await callApi(`${OFFERING_API}/${id}`, {
+            method: "DELETE"
+        });
+
+        await loadOfferings();
+        offeringMessage.textContent =
+            "Đã xóa lớp học phần!";
+
+    } catch (error) {
+        offeringMessage.textContent = error.message;
+    }
+}
+
+// 9. Gắn sự kiện các nút
+document.getElementById("addOfferingBtn")
+    .addEventListener("click", openAddOffering);
+
+document.getElementById("cancelOfferingBtn")
+    .addEventListener("click", () => offeringDialog.close());
+
+document.getElementById("searchOffering")
+    .addEventListener("input", renderOfferings);
