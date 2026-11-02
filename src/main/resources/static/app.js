@@ -148,35 +148,48 @@ function updateDashboard() {
 
 // 5. Chuyển trang Sidebar
 
+
 function showPage(pageName) {
 
     const pageTitles = {
         dashboard: "Tổng quan",
         rooms: "Quản lý phòng học",
-        teachers: "Quản lý giảng viên"
+        teachers: "Quản lý giảng viên",
+        groups: "Quản lý lớp sinh viên"
     };
 
+    // Hiển thị đúng trang được chọn
     document.querySelectorAll(".page").forEach(page => {
+
         page.classList.toggle(
             "hidden",
             page.id !== pageName + "Page"
         );
     });
 
+    // Cập nhật tiêu đề
     document.getElementById("pageTitle").textContent =
         pageTitles[pageName] || "HPUNI Smart Classroom";
 
+    // Đánh dấu mục Sidebar đang chọn
     document.querySelectorAll(".nav-item").forEach(btn => {
+
         btn.classList.toggle(
             "active",
             btn.dataset.page === pageName
         );
     });
 
+    // Tải dữ liệu theo từng trang
     if (pageName === "teachers") {
         loadTeachers();
     }
+
+    if (pageName === "groups") {
+        loadGroups();
+    }
 }
+
 
 
 // 6. Mở form thêm phòng
@@ -540,3 +553,254 @@ document.getElementById("cancelTeacherBtn")
 
 document.getElementById("searchTeacher")
     .addEventListener("input", renderTeachers);
+
+/* =========================================
+   MODULE QUẢN LÝ LỚP SINH VIÊN
+========================================= */
+
+const GROUP_API = "/api/catalog/groups";
+
+let studentGroups = [];
+let editingGroupId = null;
+
+const groupTable =
+    document.getElementById("groupTable");
+
+const groupDialog =
+    document.getElementById("groupDialog");
+
+const groupForm =
+    document.getElementById("groupForm");
+
+const groupMessage =
+    document.getElementById("groupMessage");
+
+const groupFormMessage =
+    document.getElementById("groupFormMessage");
+
+// 1. Tải danh sách lớp từ backend
+async function loadGroups() {
+
+    groupMessage.textContent = "Đang tải danh sách lớp...";
+
+    try {
+        studentGroups = await callApi(GROUP_API);
+
+        groupMessage.textContent = "";
+        renderGroups();
+
+    } catch (error) {
+        groupMessage.textContent = error.message;
+    }
+}
+
+// 2. Hiển thị danh sách lớp
+function renderGroups() {
+
+    const keyword = document
+        .getElementById("searchGroup")
+        .value.trim().toLowerCase();
+
+    const filtered = studentGroups.filter(group =>
+        group.code.toLowerCase().includes(keyword) ||
+        group.name.toLowerCase().includes(keyword)
+    );
+
+    groupTable.replaceChildren();
+
+    if (filtered.length === 0) {
+
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 4;
+        cell.textContent = "Không tìm thấy lớp sinh viên.";
+
+        row.appendChild(cell);
+        groupTable.appendChild(row);
+
+        return;
+    }
+
+    filtered.forEach(group => {
+
+        const row = document.createElement("tr");
+
+        const values = [
+            group.code,
+            group.name,
+            group.studentCount
+        ];
+
+        values.forEach(value => {
+
+            const cell = document.createElement("td");
+            cell.textContent = value;
+
+            row.appendChild(cell);
+        });
+
+        const actionCell = document.createElement("td");
+        const actions = document.createElement("div");
+
+        actions.className = "table-actions";
+
+        // Nút Sửa
+        const editBtn = document.createElement("button");
+
+        editBtn.textContent = "Sửa";
+        editBtn.className = "edit-btn";
+
+        editBtn.onclick = () => openEditGroup(group.id);
+
+        // Nút Xóa
+        const deleteBtn = document.createElement("button");
+
+        deleteBtn.textContent = "Xóa";
+        deleteBtn.className = "danger-btn";
+
+        deleteBtn.onclick = () => deleteGroup(group.id);
+
+        actions.append(editBtn, deleteBtn);
+
+        actionCell.appendChild(actions);
+        row.appendChild(actionCell);
+
+        groupTable.appendChild(row);
+    });
+}
+
+// 3. Mở form thêm lớp
+function openAddGroup() {
+
+    editingGroupId = null;
+    groupForm.reset();
+
+    document.getElementById("groupFormTitle")
+        .textContent = "Thêm lớp sinh viên";
+
+    groupFormMessage.textContent = "";
+
+    groupDialog.showModal();
+}
+
+// 4. Mở form sửa lớp
+function openEditGroup(id) {
+
+    const group = studentGroups.find(g => g.id === id);
+
+    if (!group) {
+        alert("Không tìm thấy lớp sinh viên.");
+        return;
+    }
+
+    editingGroupId = id;
+
+    document.getElementById("groupFormTitle")
+        .textContent = "Cập nhật lớp sinh viên";
+
+    document.getElementById("groupCode").value =
+        group.code;
+
+    document.getElementById("groupName").value =
+        group.name;
+
+    document.getElementById("groupCount").value =
+        group.studentCount;
+
+    groupFormMessage.textContent = "";
+    groupDialog.showModal();
+}
+
+// 5. Lưu lớp mới hoặc sửa lớp
+groupForm.addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const groupData = {
+
+        code: document.getElementById("groupCode")
+            .value.trim(),
+
+        name: document.getElementById("groupName")
+            .value.trim(),
+
+        studentCount: Number(
+            document.getElementById("groupCount").value
+        )
+    };
+
+    const editing = editingGroupId !== null;
+
+    const url = editing
+        ? `${GROUP_API}/${editingGroupId}`
+        : GROUP_API;
+
+    const saveBtn =
+        document.getElementById("saveGroupBtn");
+
+    saveBtn.disabled = true;
+    groupFormMessage.textContent = "";
+
+    try {
+        await callApi(url, {
+            method: editing ? "PUT" : "POST",
+            body: JSON.stringify(groupData)
+        });
+
+        groupDialog.close();
+
+        await loadGroups();
+
+        groupMessage.textContent = editing
+            ? "Đã cập nhật lớp thành công!"
+            : "Đã thêm lớp thành công!";
+
+    } catch (error) {
+
+        groupFormMessage.textContent = error.message;
+
+    } finally {
+
+        saveBtn.disabled = false;
+    }
+});
+
+// 6. Xóa lớp sinh viên
+async function deleteGroup(id) {
+
+    const group = studentGroups.find(g => g.id === id);
+
+    if (!group) return;
+
+    const confirmed = confirm(
+        `Bạn có chắc muốn xóa lớp ${group.code}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        await callApi(`${GROUP_API}/${id}`, {
+            method: "DELETE"
+        });
+
+        await loadGroups();
+
+        groupMessage.textContent =
+            "Đã xóa lớp thành công!";
+
+    } catch (error) {
+
+        groupMessage.textContent = error.message;
+    }
+}
+
+// 7. Gắn sự kiện vào các nút
+document.getElementById("addGroupBtn")
+    .addEventListener("click", openAddGroup);
+
+document.getElementById("cancelGroupBtn")
+    .addEventListener("click", () => groupDialog.close());
+
+document.getElementById("searchGroup")
+    .addEventListener("input", renderGroups);
