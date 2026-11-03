@@ -21,14 +21,19 @@ public class ScheduleService {
 
     private final ScheduleRepository repository;
     private final RoomRepository roomRepository;
+    private final SchedulingRuleService ruleService;
+
 
     public ScheduleService(
             ScheduleRepository repository,
-            RoomRepository roomRepository) {
+            RoomRepository roomRepository,
+            SchedulingRuleService ruleService) {
 
         this.repository = repository;
         this.roomRepository = roomRepository;
+        this.ruleService = ruleService;
     }
+
 
     // 1. Lấy lịch theo tuần
     public List<ScheduleSession> getWeek(LocalDate date) {
@@ -180,6 +185,39 @@ public class ScheduleService {
                             + info.studentCount() + " sinh viên"
             );
         }
+
+// Kiểm tra phòng chuyên dụng
+        boolean suitable = ruleService.isRoomSuitable(
+                request.offeringId(),
+                room.computers(),
+                room.projector()
+        );
+
+        if (!suitable) {
+            throw badRequest(
+                    "Phòng học không đáp ứng thiết bị " +
+                            "của môn học"
+            );
+        }
+
+// Kiểm tra lịch bận của giảng viên
+        boolean teacherUnavailable =
+                ruleService.getBusyForWeek(request.sessionDate())
+                        .stream()
+                        .anyMatch(b ->
+                                b.teacherId() == info.teacherId()
+                                        && b.date().equals(request.sessionDate())
+                                        && b.start().isBefore(request.endTime())
+                                        && b.end().isAfter(request.startTime())
+                        );
+
+        if (teacherUnavailable) {
+            throw conflict(
+                    "Giảng viên đã khai báo bận " +
+                            "trong khoảng giờ này"
+            );
+        }
+
 
         LocalDate date = request.sessionDate();
         LocalTime start = request.startTime();

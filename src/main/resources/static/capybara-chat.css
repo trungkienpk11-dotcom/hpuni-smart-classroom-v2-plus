@@ -1,0 +1,63 @@
+/* Bai 10.1: styles limited to the floating chatbot to avoid affecting existing pages */
+#capy-launcher {
+    position: fixed; z-index: 900; right: 22px; bottom: 20px;
+    width: 118px; height: 118px; padding: 0; border: 1px solid #e0d4c9; border-radius: 22px; overflow: hidden;
+    background: #f0eae4; cursor: pointer; box-shadow: 0 10px 28px #0006;
+    transition: transform .2s ease;
+}
+#capy-launcher:hover, #capy-launcher:focus-visible { transform: translateY(-5px); }
+/* Hai anh trung vi tri; anh vay tay hien khi hover (hoac keyboard focus). */
+#capy-launcher .capy-image {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+    pointer-events: none;
+    transition: opacity .22s ease, transform .22s ease;
+}
+#capy-launcher .capy-image-wave { opacity: 0; }
+@media (hover: hover) {
+  #capy-launcher:hover .capy-image-idle { opacity: 0; }
+  #capy-launcher:hover .capy-image-wave { opacity: 1; }
+}
+#capy-launcher:focus-visible .capy-image-idle { opacity: 0; }
+#capy-launcher:focus-visible .capy-image-wave { opacity: 1; }
+#capy-launcher:focus-visible { outline: 3px solid #93c5fd; outline-offset: 5px; border-radius: 15px; }
+#capy-window {
+    position: fixed; z-index: 901; right: 24px; bottom: 152px;
+    width: min(390px, calc(100vw - 24px)); height: min(540px, calc(100dvh - 180px));
+    background: #101b2e; color: #f1f5f9; border: 1px solid #344661;
+    border-radius: 18px; display: flex; flex-direction: column;
+    overflow: hidden; box-shadow: 0 24px 70px #0009;
+}
+#capy-window[hidden] { display: none; }
+#capy-window .capy-header { background: linear-gradient(115deg, #2563eb, #1d4ed8); padding: 14px 16px; display: flex; gap: 11px; align-items: center; }
+#capy-window .capy-header-copy { flex: 1; min-width: 0; }
+#capy-window .capy-header-copy strong { display: block; font-size: 16px; }
+#capy-window .capy-header-copy span { font-size: 12px; color: #dbeafe; }
+#capy-window .capy-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #bfdbfe; background: #f1c991; flex: 0 0 38px; }
+#capy-close { background: #ffffff21; border: 0; color: #fff; border-radius: 8px; width: 34px; height: 34px; font-size: 22px; cursor: pointer; }
+#capy-close:hover { background: #ffffff3d; }
+#capy-messages { flex: 1; overflow-y: auto; padding: 15px 13px; display: flex; flex-direction: column; gap: 10px; background: #0e1728; }
+#capy-messages .capy-bubble { max-width: 87%; padding: 11px 13px; line-height: 1.5; border-radius: 14px; font-size: 13px; overflow-wrap: anywhere; white-space: pre-wrap; }
+#capy-messages .capy-bot { align-self: flex-start; background: #23334d; border-bottom-left-radius: 4px; }
+#capy-messages .capy-user { align-self: flex-end; background: #2563eb; border-bottom-right-radius: 4px; }
+#capy-suggestions { display: flex; gap: 6px; flex-wrap: wrap; padding: 9px 12px; background: #101b2e; border-top: 1px solid #344661; }
+#capy-suggestions button { border: 1px solid #38557a; background: #1a2c48; color: #dbeafe; border-radius: 20px; padding: 6px 9px; font-size: 11px; cursor: pointer; }
+#capy-suggestions button:hover { background: #264e84; }
+#capy-form { display: flex; gap: 8px; padding: 12px; background: #101b2e; border-top: 1px solid #344661; align-items: end; }
+#capy-text { color: #fff; background: #0a1323; border: 1px solid #344661; border-radius: 12px; outline: none; flex: 1; padding: 9px 11px; font: inherit; font-size: 13px; resize: none; min-height: 41px; max-height: 100px; }
+#capy-text:focus { border-color: #60a5fa; }
+#capy-send { background: #3b82f6; color: #fff; border: 0; border-radius: 11px; height: 42px; padding: 0 13px; cursor: pointer; }
+#capy-send:disabled { opacity: .55; cursor: wait; }
+#capy-mode { color: #94a3b8; padding: 0 13px 9px; font-size: 10px; background: #101b2e; }
+@media (max-width: 480px) {
+  #capy-launcher { width: 88px; height: 88px; right: 10px; bottom: 8px; }
+  #capy-window { right: 8px; bottom: 108px; width: calc(100vw - 16px); height: min(520px, calc(100dvh - 135px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #capy-launcher, #capy-launcher .capy-image { transition: none; }
+}

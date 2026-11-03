@@ -1,0 +1,159 @@
+/* HPUNI V2.1 · Bản vá giao diện riêng cho THỜI KHÓA BIỂU và XẾP LỊCH TỰ ĐỘNG.
+   Không sửa sidebar, dashboard, CRUD hay API. Tải SAU style.css và v2-upgrade.css. */
+#schedulePage, #autoSchedulePage {
+  --ux-surface: #15223a;
+  --ux-deep: #0e192d;
+  --ux-border: #31435f;
+  --ux-text: #edf5ff;
+  --ux-muted: #a6bad8;
+  --ux-accent: #6295ff;
+  --ux-green: #1ab69e;
+  --ux-bg-tint: #1f365c;
+  color: var(--ux-text);
+}
+#schedulePage .hpuni-ux-overline, #autoSchedulePage .hpuni-ux-overline {
+  display:block; color: #79dfc6; letter-spacing:.12em; font-size:10px; font-weight:800; margin-bottom:10px;
+}
+#schedulePage .hpuni-ux-page-header, #autoSchedulePage .hpuni-ux-page-header { gap:20px; align-items:center; margin-bottom:22px; }
+#schedulePage .hpuni-ux-page-header h2, #autoSchedulePage .hpuni-ux-page-header h2 {font-size:clamp(24px,2.6vw,31px);letter-spacing:-.035em; margin:0 0 7px;color:var(--ux-text)}
+#schedulePage .hpuni-ux-page-header p, #autoSchedulePage .hpuni-ux-page-header p {max-width:710px;line-height:1.55;font-size:13px;color:var(--ux-muted)}
+.hpuni-ux-header-actions {display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+#schedulePage .hpuni-ux-header-actions button, #autoSchedulePage button {white-space:normal}
+#schedulePage .panel, #autoSchedulePage .panel {border:1px solid var(--ux-border);border-radius:19px; background:var(--ux-surface);color:var(--ux-text);box-shadow:0 14px 35px #00000020;}
+#schedulePage .hpuni-ux-schedule-panel, #autoSchedulePage .hpuni-ux-settings, #autoSchedulePage .hpuni-ux-results {padding:23px 23px 22px}
+.hpuni-ux-panel-top {display:flex;align-items:start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+#schedulePage .hpuni-ux-panel-top h3, #autoSchedulePage .hpuni-ux-panel-top h3 {font-size:17px;margin:2px 0 6px;color:var(--ux-text)}
+#schedulePage .hpuni-ux-helper, #autoSchedulePage .hpuni-ux-helper {font-size:12px;color:var(--ux-muted);line-height:1.5;margin:4px 0 0}
+#schedulePage .hpuni-ux-week-controls {margin:0;gap:8px;justify-content:flex-end}
+#schedulePage .hpuni-ux-week-controls button, #schedulePage .hpuni-ux-filterbar button {padding:10px 12px;font-size:12px;border-radius:10px;white-space:nowrap}
+#schedulePage #weekPicker {height:40px;min-width:146px;background:var(--ux-deep);color:var(--ux-text);border:1px solid var(--ux-border);font-size:12px;padding:9px;border-radius:10px;color-scheme:dark}
+#schedulePage .hpuni-ux-filterbar {display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap;border-top:1px solid var(--ux-border);padding:17px 0 16px;margin-top:18px;border-bottom:1px solid var(--ux-border)}
+#schedulePage .hpuni-ux-filterbar label {display:flex;flex-direction:column;gap:7px;min-width:130px;flex:1 1 160px;font-size:11px;color:var(--ux-muted)}
+#schedulePage .hpuni-ux-filterbar label span {font-weight:700}
+#schedulePage .hpuni-ux-filterbar select {height:40px;min-width:0;max-width:100%;font-size:12px;color:var(--ux-text);background:var(--ux-deep);border:1px solid var(--ux-border);border-radius:10px;padding:8px 10px}
+#schedulePage .hpuni-ux-filterbar select option {background:#f6f9ff;color:#101d34}
+#schedulePage .hpuni-ux-count {display:inline-flex;align-items:center;justify-content:center;min-width:67px;min-height:32px;margin-left:auto;padding:7px 11px;background:#0a3538;color:#8cf6e0;border:1px solid #158b7c80;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
+#schedulePage .hpuni-ux-week-heading {display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:20px 0 14px}
+#schedulePage .hpuni-ux-week-heading h3 {font-size:16px;margin:0;color:var(--ux-text);font-weight:800}
+#schedulePage .hpuni-ux-week-heading span {font-size:11px;color:var(--ux-muted)}
+#schedulePage .hpuni-ux-calendar-wrap {overflow-x:auto; padding:0 0 7px; scrollbar-color:#4d6287 transparent;}
+#schedulePage .hpuni-ux-week-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;min-width:0}
+#schedulePage .hpuni-ux-day {background:var(--ux-deep);min-width:0;min-height:245px;padding:10px;border-radius:12px;border:1px solid var(--ux-border)}
+#schedulePage .hpuni-ux-today {border-color:#39bdaa;box-shadow:inset 0 0 0 1px #3fbdac40;background:#12313d}
+#schedulePage .hpuni-ux-day-head {display:flex;align-items:start;justify-content:space-between;gap:4px;padding-bottom:9px;border-bottom:1px solid var(--ux-border);font-size:11px}
+#schedulePage .hpuni-ux-day-head strong {font-size:11px;color:var(--ux-text)}
+#schedulePage .hpuni-ux-day-head span {font-size:10px;color:#90b0dd;white-space:nowrap}
+#schedulePage .hpuni-ux-day-count {margin:9px 0 10px;color:#90a8ca;font-size:10px}
+#schedulePage .hpuni-ux-session {margin:0 0 9px;padding:10px 9px;background:#213d67;border:1px solid #385f95;border-left:3px solid #5a98ff;border-radius:9px;overflow-wrap:anywhere;font-size:11px;}
+#schedulePage .hpuni-ux-session:hover {border-color:#7daaff}
+#schedulePage .hpuni-ux-session .hpuni-ux-subject {display:block;font-size:11px;line-height:1.45;margin:0 0 7px;color:#fff}
+#schedulePage .hpuni-ux-time {font-weight:800;color:#d7e9ff;font-size:11px;letter-spacing:0;margin:0 0 8px;white-space:nowrap}
+#schedulePage .hpuni-ux-room {display:inline-block;border-radius:6px;padding:4px 6px;color:#a7fff0;background:#0b3f47;font-size:10px;font-weight:800;margin-bottom:8px}
+#schedulePage .hpuni-ux-session-meta {display:grid;gap:5px;color:#d5e3f5;font-size:10.5px;line-height:1.45}
+#schedulePage .hpuni-ux-card-actions {display:flex;gap:6px;margin:10px 0 0}
+#schedulePage .hpuni-ux-card-actions button {margin:0;font-size:10.5px;padding:6px 9px;border:0;border-radius:6px;background:#335c99;color:#eef6ff}
+#schedulePage .hpuni-ux-card-actions button:last-child {background:#842e46}
+#schedulePage .hpuni-ux-day-empty {color:var(--ux-muted);font-size:11px;margin-top:15px;line-height:1.5}
+#schedulePage .hpuni-ux-message, #autoSchedulePage .hpuni-ux-message {color:var(--ux-muted);margin:11px 0 0;line-height:1.5;min-height:16px;font-size:12px}
+#autoSchedulePage .hpuni-ux-readonly {font-size:11px;color:#91f3d9;border:1px solid #1e967c69;border-radius:999px;background:#0b413b;padding:8px 12px;white-space:nowrap}
+#autoSchedulePage .hpuni-ux-steps {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:19px}
+#autoSchedulePage .hpuni-ux-steps span {display:flex;gap:8px;align-items:center;background:#122139;color:#a9bad7;font-size:11px;padding:9px 12px;border:1px solid var(--ux-border);border-radius:10px}
+#autoSchedulePage .hpuni-ux-steps strong {display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#2f62b8;color:white;font-size:10px}
+#autoSchedulePage .hpuni-ux-settings .auto-form {gap:14px;margin:20px 0}
+#autoSchedulePage .hpuni-ux-settings .auto-form label {font-size:12px}
+#autoSchedulePage .hpuni-ux-settings .auto-form select,
+#autoSchedulePage .hpuni-ux-settings .auto-form input {background:var(--ux-deep);color:var(--ux-text);height:43px;border:1px solid var(--ux-border);border-radius:10px;font-size:13px;padding:10px;color-scheme:dark}
+#autoSchedulePage .hpuni-ux-auto-actions {display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#autoSchedulePage .hpuni-ux-action-help {font-size:11px;color:var(--ux-muted);line-height:1.5}
+#autoSchedulePage .hpuni-ux-action-help strong {color:#a6f4e5}
+#autoSchedulePage .hpuni-ux-results {margin-top:18px}
+#autoSchedulePage .hpuni-ux-results-head {display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+#autoSchedulePage .hpuni-ux-results-head h3 {font-size:17px;margin:0 0 4px}
+#autoSchedulePage .hpuni-ux-result-actions {display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+#autoSchedulePage .hpuni-ux-confirm {border:1px solid #20b9a2;background:#119e8d;color:white;font-weight:800;border-radius:10px;padding:11px 15px;font-size:12px}
+#autoSchedulePage .hpuni-ux-confirm:hover:not(:disabled) {background:#0d8577}
+#autoSchedulePage .hpuni-ux-confirm:disabled {background:#25465b;border-color:#385770;color:#abc0d0;opacity:.7}
+#autoSchedulePage .hpuni-ux-result-actions .secondary-btn {padding:10px 12px;font-size:11px;border-radius:10px}
+#autoSchedulePage .hpuni-ux-state {font-size:11px;font-weight:800;padding:8px 10px;border-radius:999px;white-space:nowrap}
+#autoSchedulePage .hpuni-ux-state.idle {background:#24324a;color:#b3c4de}
+#autoSchedulePage .hpuni-ux-state.preview {background:#433716;color:#ffe6aa;border:1px solid #886b37}
+#autoSchedulePage .hpuni-ux-state.saved {background:#123f39;color:#8ef0d8;border:1px solid #258d7b}
+#autoSchedulePage .hpuni-ux-summary {margin:14px 0 12px;font-size:12px;color:var(--ux-muted)}
+#autoSchedulePage .hpuni-ux-result-stats {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+#autoSchedulePage .hpuni-ux-result-stats:empty {display:none}
+#autoSchedulePage .hpuni-ux-stat {border-radius:11px;padding:13px 14px;border:1px solid #3b5275;background:#0f1e36;display:flex;flex-direction:column;gap:6px}
+#autoSchedulePage .hpuni-ux-stat span {font-size:10px;color:#adc0e0}
+#autoSchedulePage .hpuni-ux-stat strong {font-size:21px;color:#f6faff;line-height:1}
+#autoSchedulePage .hpuni-ux-auto-table-wrap {overflow-x:auto;border:1px solid var(--ux-border);border-radius:12px;margin-top:14px}
+#autoSchedulePage table.hpuni-ux-auto-table {width:100%;min-width:880px;border-collapse:collapse}
+#autoSchedulePage .hpuni-ux-auto-table th {font-size:11px;letter-spacing:.035em;font-weight:800;text-transform:uppercase;background:#13243f;color:#a6c8f5;padding:12px 13px;white-space:nowrap}
+#autoSchedulePage .hpuni-ux-auto-table td {font-size:12px;color:#dceafb;padding:13px;vertical-align:middle;border-bottom:1px solid #3c4d693b;line-height:1.45}
+#autoSchedulePage .hpuni-ux-auto-table tbody tr:nth-child(even) td {background:#ffffff04}
+#autoSchedulePage .hpuni-ux-auto-table tr:hover td {background:#28426236}
+#autoSchedulePage .hpuni-ux-auto-table .hpuni-ux-keep {white-space:nowrap;color:#a5c5ef}
+#autoSchedulePage .hpuni-ux-auto-table .hpuni-ux-bold-subject {font-weight:800;color:#f6faff;min-width:150px}
+#autoSchedulePage .hpuni-ux-auto-table .hpuni-ux-room-badge {color:#64ebd3;font-weight:800}
+#autoSchedulePage .hpuni-ux-empty-row {text-align:center!important;padding:28px 15px!important;color:var(--ux-muted)!important}
+#autoSchedulePage .hpuni-ux-explanation {min-width:95px;max-width:260px}
+#autoSchedulePage .hpuni-ux-explanation summary {cursor:pointer;font-size:11px;font-weight:800;color:#82b6fa;white-space:nowrap}
+#autoSchedulePage .hpuni-ux-explanation p {font-size:11px;line-height:1.55;color:var(--ux-muted);margin:10px 0 0}
+#autoSchedulePage .hpuni-ux-warnings {border-top:1px solid var(--ux-border);margin-top:17px;padding-top:15px}
+#autoSchedulePage .hpuni-ux-warnings-head {display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+#autoSchedulePage .hpuni-ux-warnings-head h3 {font-size:14px;margin:0}
+#autoSchedulePage #autoUnscheduled {margin:10px 0 0;padding-left:22px;font-size:12px;line-height:1.7;color:#ffce72}
+#autoSchedulePage #autoUnscheduled .hpuni-ux-note-ok {color:#82efd7;list-style:none;margin-left:-19px}
+#autoSchedulePage .hpuni-ux-message.hpuni-ux-error {color:#ffadad}
+#autoSchedulePage .hpuni-ux-message.hpuni-ux-success {color:#95f4dc}
+#autoSchedulePage .rules-panel {margin-top:18px;border-top:3px solid #34517b}
+#autoSchedulePage .rules-panel h3 {font-size:17px}
+#autoSchedulePage .rules-panel input:not([type=checkbox]),
+#autoSchedulePage .rules-panel select {background:var(--ux-deep);color:var(--ux-text);border:1px solid var(--ux-border);color-scheme:dark}
+#autoSchedulePage .rules-panel select option {color:#14243d;background:#f4f7fc}
+/* Tương phản cho chế độ sáng, chỉ áp dụng hai trang được nâng cấp. */
+:root[data-hpuni-theme=light] #schedulePage,
+:root[data-hpuni-theme=light] #autoSchedulePage {
+  --ux-surface:#fff; --ux-deep:#f1f5fc; --ux-border:#c7d6eb;
+  --ux-text:#1b2b47; --ux-muted:#566c8c; --ux-accent:#346ce4; --ux-bg-tint:#e4ecfa;
+}
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-day {background:#f7faff}
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-today {background:#e2f8f3}
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-session {background:#e2edff;border-color:#a5bcec;color:#253656}
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-session .hpuni-ux-subject {color:#142647}
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-time,
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-session-meta {color:#344f7b}
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-day-head span,
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-day-count {color:#536f9b}
+:root[data-hpuni-theme=light] #schedulePage .hpuni-ux-room {background:#d8f6ed;color:#116354}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-steps span {background:#eef3fb;color:#3b5376}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-stat {background:#eff4fc}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-stat strong {color:#18375d}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-stat span {color:#516e94}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-auto-table th {background:#e6eefb;color:#294c7a}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-auto-table td {color:#253c60}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-auto-table .hpuni-ux-bold-subject {color:#18304f}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-auto-table .hpuni-ux-keep {color:#315789}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-auto-table .hpuni-ux-room-badge {color:#067b6d}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-state.idle {background:#e5ebf5;color:#455b7b}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-state.preview {background:#fff1c9;color:#835900}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-state.saved {background:#d8f5e8;color:#116f55}
+:root[data-hpuni-theme=light] #autoSchedulePage .hpuni-ux-readonly {background:#e2fbf3;color:#096f5b}
+/* Tablet và mobile: chỉ lúc hẹp mới cho lướt ngang lịch; desktop không cần 1190px cố định. */
+@media (max-width:1450px) {
+  #schedulePage .hpuni-ux-week-grid {min-width:930px}
+  #schedulePage .hpuni-ux-day {min-width:0}
+}
+@media (max-width:1050px) {
+  #schedulePage .hpuni-ux-week-grid {min-width:880px}
+  #autoSchedulePage .hpuni-ux-result-stats {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:680px) {
+  #schedulePage .hpuni-ux-schedule-panel,#autoSchedulePage .hpuni-ux-settings,#autoSchedulePage .hpuni-ux-results {padding:15px}
+  #schedulePage .hpuni-ux-page-header,#autoSchedulePage .hpuni-ux-page-header {align-items:flex-start}
+  #schedulePage .hpuni-ux-header-actions {width:100%}
+  #schedulePage .hpuni-ux-week-controls {justify-content:flex-start}
+  #schedulePage .hpuni-ux-week-controls button {font-size:11px}
+  #schedulePage .hpuni-ux-filterbar label {flex-basis:100%}
+  #schedulePage .hpuni-ux-count {margin-left:0}
+  #autoSchedulePage .hpuni-ux-result-stats {gap:7px}
+  #autoSchedulePage .hpuni-ux-results-head {align-items:flex-start}
+}

@@ -84,7 +84,7 @@ function renderRooms() {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
 
-        cell.colSpan = 7;
+        cell.colSpan = 8;
         cell.textContent = "Không tìm thấy phòng học.";
         row.appendChild(cell);
         table.appendChild(row);
@@ -152,6 +152,7 @@ function updateDashboard() {
 
 
 
+
 function showPage(pageName) {
 
     const pageTitles = {
@@ -161,10 +162,14 @@ function showPage(pageName) {
         groups: "Quản lý lớp sinh viên",
         courses: "Quản lý môn học",
         offerings: "Quản lý lớp học phần",
-        schedule: "Thời khóa biểu"
+        schedule: "Thời khóa biểu",
+        autoSchedule: "Xếp lịch tự động",
+        availability: "Tìm phòng trống",
+        reports: "Thống kê & báo cáo"
     };
 
     document.querySelectorAll(".page").forEach(page => {
+
         page.classList.toggle(
             "hidden",
             page.id !== pageName + "Page"
@@ -175,6 +180,7 @@ function showPage(pageName) {
         pageTitles[pageName] || "HPUNI Smart Classroom";
 
     document.querySelectorAll(".nav-item").forEach(btn => {
+
         btn.classList.toggle(
             "active",
             btn.dataset.page === pageName
@@ -186,6 +192,15 @@ function showPage(pageName) {
     if (pageName === "courses") loadCourses();
     if (pageName === "offerings") loadOfferings();
     if (pageName === "schedule") loadSchedule();
+
+    if (pageName === "autoSchedule") {
+
+        const picker = document.getElementById("autoWeek");
+
+        if (!picker.value) {
+            picker.value = localDateString(new Date());
+        }
+    }
 }
 
 
@@ -311,7 +326,8 @@ async function deleteRoom(id) {
 document.querySelectorAll(".nav-item").forEach(button => {
 
     button.addEventListener("click", () => {
-        showPage(button.dataset.page);
+        // Nút mở chatbot không phải trang; không ẩn trang hiện tại.
+        if (button.dataset.page) showPage(button.dataset.page);
     });
 });
 
@@ -1446,129 +1462,170 @@ function getMonday(dateString) {
     return date;
 }
 
-// 3. Tải lịch học theo tuần
+// V2.1: Lịch tuần, lọc và xuất CSV. Giữ nguyên CRUD của bản tự học.
+let scheduleLoadVersion = 0;
+
+function scheduleFilteredEntries() {
+    // Bản vá hợp nhất: bộ lọc là tính năng bổ sung, không được làm hỏng lịch nếu HTML cũ được mở.
+    const room = document.getElementById('scheduleFilterRoom')?.value ?? '';
+    const group = document.getElementById('scheduleFilterGroup')?.value ?? '';
+    const teacher = document.getElementById('scheduleFilterTeacher')?.value ?? '';
+    return scheduleEntries.filter(item =>
+        (!room || String(item.roomCode ?? '') === room) &&
+        (!group || String(item.groupCode ?? '') === group) &&
+        (!teacher || String(item.teacherName ?? '') === teacher)
+    );
+}
+
+function updateScheduleFilterOptions() {
+    const fields = [
+        ['scheduleFilterRoom', 'roomCode', 'Tất cả phòng'],
+        ['scheduleFilterGroup', 'groupCode', 'Tất cả lớp'],
+        ['scheduleFilterTeacher', 'teacherName', 'Tất cả giảng viên']
+    ];
+    fields.forEach(([id, key, placeholder]) => {
+        const select = document.getElementById(id);
+        if (!select) return;  // optional UI control missing => base schedule still works
+        const selected = select.value;
+        const values = [...new Set(scheduleEntries.map(item => String(item[key] ?? '').trim()).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, 'vi'));
+        select.replaceChildren();
+        select.add(new Option(placeholder, ''));
+        values.forEach(value => select.add(new Option(value, value)));
+        select.value = values.includes(selected) ? selected : '';
+    });
+}
+
+// 3. Tải thời khóa biểu đã LƯU, không tự động sử dụng dữ liệu preview
 async function loadSchedule() {
-
-    if (!weekPicker.value) {
-        weekPicker.value = localDateString(new Date());
-    }
-
+    if (!weekPicker.value) weekPicker.value = localDateString(new Date());
     const monday = getMonday(weekPicker.value);
-    const weekStart = localDateString(monday);
-
-    scheduleMessage.textContent = "Đang tải lịch học...";
-
+    const mondayString = localDateString(monday);
+    const version = ++scheduleLoadVersion;
+    scheduleMessage.textContent = 'Đang tải thời khóa biểu...';
     try {
-        scheduleEntries = await callApi(
-            `${SCHEDULE_API}?weekStart=${weekStart}`
-        );
-
-        scheduleMessage.textContent = "";
+        const result = await callApi(`${SCHEDULE_API}?weekStart=${encodeURIComponent(mondayString)}`);
+        if (version !== scheduleLoadVersion) return; // tránh dữ liệu tuần cũ ghi đè tuần mới
+        if (!Array.isArray(result)) throw new Error('API không trả về danh sách lịch học.');
+        scheduleEntries = result;
+        updateScheduleFilterOptions();
         renderSchedule(monday);
-
+        scheduleMessage.textContent = '';
     } catch (error) {
-        scheduleMessage.textContent = error.message;
+        if (version !== scheduleLoadVersion) return;
+        scheduleEntries = [];
+        updateScheduleFilterOptions();
+        renderSchedule(monday);
+        scheduleMessage.textContent =
+            'Chưa thể tải thời khóa biểu: ' + error.message +
+            '. Kiểm tra Spring Boot trên cổng 8081 rồi nhấn Làm mới.';
     }
 }
 
-// 4. Hiển thị bảy ngày trong tuần
+// 4. Lưới 7 ngày: ngắn gọn như V2 cũ, giữ Sửa/Xóa của bản tự học
 function renderSchedule(monday) {
-
     weekGrid.replaceChildren();
-
     const sunday = new Date(monday);
     sunday.setDate(sunday.getDate() + 6);
+    const formatDate = date => `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const weekLabel = document.getElementById('scheduleWeekLabel');
+    weekLabel.textContent = `Tuần ${formatDate(monday)} – ${formatDate(sunday)} / ${sunday.getFullYear()}`;
+    const entries = scheduleFilteredEntries();
+    const scheduleCounter = document.getElementById('scheduleSessionCount');
+    if (scheduleCounter) scheduleCounter.textContent = `${entries.length} buổi`;
+    const dayNames = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
+    const today = localDateString(new Date());
 
-    document.getElementById("scheduleWeekLabel")
-        .textContent =
-        `Tuần ${localDateString(monday)} đến ` +
-        localDateString(sunday);
-
-    const dayNames = [
-        "Thứ Hai", "Thứ Ba", "Thứ Tư",
-        "Thứ Năm", "Thứ Sáu", "Thứ Bảy",
-        "Chủ Nhật"
-    ];
-
-    for (let i = 0; i < 7; i++) {
-
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
         const date = new Date(monday);
-        date.setDate(date.getDate() + i);
-
-        const dateKey = localDateString(date);
-
-        const column = document.createElement("div");
-        column.className = "schedule-day";
-
-        const heading = document.createElement("div");
-        heading.className = "schedule-day-title";
-
-        heading.textContent =
-            `${dayNames[i]} - ${dateKey}`;
-
-        column.appendChild(heading);
-
-        const sessions = scheduleEntries
-            .filter(s => s.sessionDate === dateKey)
-            .sort((a, b) =>
-                a.startTime.localeCompare(b.startTime)
-            );
-
-        if (sessions.length === 0) {
-
-            const empty = document.createElement("p");
-            empty.className = "schedule-empty";
-            empty.textContent = "Chưa có lịch học.";
-
-            column.appendChild(empty);
+        date.setDate(date.getDate() + dayIndex);
+        const key = localDateString(date);
+        const sessions = entries.filter(s => s.sessionDate === key)
+            .sort((a,b) => String(a.startTime).localeCompare(String(b.startTime)));
+        const col = document.createElement('section');
+        col.className = 'schedule-day hpuni-ux-day' + (key === today ? ' hpuni-ux-today' : '');
+        col.setAttribute('aria-label', `${dayNames[dayIndex]} ${formatDate(date)}, ${sessions.length} buổi`);
+        const head = document.createElement('div');
+        head.className = 'hpuni-ux-day-head';
+        const title = document.createElement('strong');
+        title.textContent = dayNames[dayIndex];
+        const dateEl = document.createElement('span');
+        dateEl.textContent = formatDate(date);
+        head.append(title, dateEl);
+        col.appendChild(head);
+        const total = document.createElement('div');
+        total.className = 'hpuni-ux-day-count';
+        total.textContent = `${sessions.length} buổi học`;
+        col.appendChild(total);
+        if (!sessions.length) {
+            const empty = document.createElement('p');
+            empty.className = 'schedule-empty hpuni-ux-day-empty';
+            empty.textContent = 'Chưa có lịch học';
+            col.appendChild(empty);
         }
-
         sessions.forEach(session => {
-
-            const card = document.createElement("div");
-            card.className = "schedule-card";
-
-            const title = document.createElement("strong");
-            title.textContent = session.courseName;
-
-            const time = document.createElement("p");
-            time.textContent =
-                session.startTime.slice(0, 5) +
-                " - " +
-                session.endTime.slice(0, 5);
-
-            const room = document.createElement("p");
-            room.textContent =
-                "Phòng: " + session.roomCode;
-
-            const teacher = document.createElement("p");
-            teacher.textContent =
-                "GV: " + session.teacherName;
-
-            const group = document.createElement("p");
-            group.textContent =
-                "Lớp: " + session.groupCode;
-
-            const editBtn = document.createElement("button");
-            editBtn.textContent = "Sửa";
-            editBtn.onclick = () =>
-                openEditSession(session.id);
-
-            const deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "Xóa";
-            deleteBtn.onclick = () =>
-                deleteSession(session.id);
-
-            card.append(
-                title, time, room, teacher,
-                group, editBtn, deleteBtn
-            );
-
-            column.appendChild(card);
+            const card = document.createElement('article');
+            card.className = 'schedule-card hpuni-ux-session';
+            const subject = document.createElement('strong');
+            subject.className = 'hpuni-ux-subject';
+            subject.textContent = session.courseName ?? 'Môn học';
+            const time = document.createElement('div');
+            time.className = 'hpuni-ux-time';
+            time.textContent = `${String(session.startTime ?? '').slice(0,5)} – ${String(session.endTime ?? '').slice(0,5)}`;
+            const room = document.createElement('span');
+            room.className = 'hpuni-ux-room';
+            room.textContent = `▣ ${session.roomCode ?? '–'}`;
+            const info = document.createElement('div');
+            info.className = 'hpuni-ux-session-meta';
+            const teacher = document.createElement('span');
+            teacher.textContent = `GV: ${session.teacherName ?? '–'}`;
+            const group = document.createElement('span');
+            group.textContent = `Lớp: ${session.groupCode ?? '–'}`;
+            info.append(teacher, group);
+            const actions = document.createElement('div');
+            actions.className = 'hpuni-ux-card-actions';
+            const edit = document.createElement('button');
+            edit.type = 'button';
+            edit.textContent = 'Sửa';
+            edit.setAttribute('aria-label', `Sửa lịch ${session.courseName ?? ''} ngày ${key}`);
+            edit.addEventListener('click', () => openEditSession(session.id));
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = 'Xóa';
+            remove.setAttribute('aria-label', `Xóa lịch ${session.courseName ?? ''} ngày ${key}`);
+            remove.addEventListener('click', () => deleteSession(session.id));
+            actions.append(edit, remove);
+            card.append(subject, time, room, info, actions);
+            col.appendChild(card);
         });
-
-        weekGrid.appendChild(column);
+        weekGrid.appendChild(col);
     }
+}
+
+// Bảng tính có BOM để Excel hiển thị tiếng Việt; chỉ xuất lịch đã lưu.
+function exportWeekCsv() {
+    const rows = scheduleFilteredEntries();
+    if (!rows.length) {
+        scheduleMessage.textContent = 'Không có buổi học đã lưu phù hợp bộ lọc để xuất CSV.';
+        return;
+    }
+    const safeCell = value => {
+        let s = String(value ?? '');
+        if (/^[\s]*[=+@-]/.test(s)) s = "'" + s; // tránh công thức CSV khi mở bằng Excel
+        return '"' + s.replace(/"/g, '""') + '"';
+    };
+    const records = [['Ngày', 'Giờ bắt đầu', 'Giờ kết thúc', 'Môn học', 'Lớp', 'Giảng viên', 'Phòng'],
+        ...rows.map(s => [s.sessionDate, s.startTime, s.endTime, s.courseName, s.groupCode, s.teacherName, s.roomCode])];
+    const csv = '\ufeff' + records.map(row => row.map(safeCell).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `HPUNI_thoi_khoa_bieu_${localDateString(getMonday(weekPicker.value))}.csv`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    scheduleMessage.textContent = `Đã chuẩn bị file CSV của ${rows.length} buổi đã lưu.`;
 }
 
 // 5. Chuyển tuần
@@ -1881,5 +1938,528 @@ document.getElementById("nextWeekBtn")
 
 weekPicker.addEventListener("change", loadSchedule);
 
+// V2.1: Các bộ lọc hoạt động trên danh sách đã lưu, không thay đổi database.
+['scheduleFilterRoom', 'scheduleFilterGroup', 'scheduleFilterTeacher'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => {
+        if (!weekPicker.value) weekPicker.value = localDateString(new Date());
+        renderSchedule(getMonday(weekPicker.value));
+    });
+});
+document.getElementById('scheduleResetFilters')?.addEventListener('click', () => {
+    ['scheduleFilterRoom', 'scheduleFilterGroup', 'scheduleFilterTeacher'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) select.value = '';
+    });
+    renderSchedule(getMonday(weekPicker.value || localDateString(new Date())));
+});
+document.getElementById('scheduleTodayBtn')?.addEventListener('click', () => {
+    weekPicker.value = localDateString(new Date());
+    loadSchedule();
+});
+document.getElementById('scheduleRefreshBtn')?.addEventListener('click', loadSchedule);
+document.getElementById('scheduleExportCsv')?.addEventListener('click', exportWeekCsv);
+
+
 document.getElementById("findFreeRoomsBtn")
     .addEventListener("click", findFreeRooms);
+
+/* ==========================================
+     XẾP LỊCH THỬ VÀ XÁC NHẬN
+========================================== */
+
+(function () {
+    "use strict";
+
+    const API = "/api/auto-schedule";
+
+    let previewToken = null;
+    let lastPlan = null;
+    let lastPlanSaved = false;
+
+    // Chỉ khởi tạo khi HTML đã tải xong
+    function initAutoSchedule() {
+
+        const $ = id => document.getElementById(id);
+
+        const previewBtn = $("autoPreviewBtn");
+        const confirmBtn = $("autoApplyBtn");
+
+        const message = $("autoMessage");
+        const summary = $("autoSummary");
+
+        const table = $("autoTable");
+        const warnings = $("autoUnscheduled");
+
+        const weekInput = $("autoWeek");
+
+        // Kiểm tra giao diện có đủ thành phần không
+        const elements = [
+            previewBtn, confirmBtn,
+            message, summary, table, warnings,
+            weekInput, $("autoSemester"), $("autoYear"),
+            $("autoResultState"), $("autoResultStats"), $("autoExportCsvBtn"), $("autoOpenWeekBtn")
+        ];
+
+        if (elements.some(el => el === null)) {
+            console.error(
+                "Lỗi: Thiếu thành phần HTML của Auto Schedule"
+            );
+            return;
+        }
+
+        // 1. Thông báo giữ nguyên ý nghĩa API của bản tự học
+        function showMessage(text, isError = false) {
+            message.textContent = text;
+            message.classList.toggle('hpuni-ux-error', isError);
+            message.classList.toggle('hpuni-ux-success', !isError);
+        }
+
+        // 2. Một preview không còn hợp lệ thì không được phê duyệt.
+        function invalidatePreview(text) {
+            previewToken = null;
+            lastPlan = null;
+            lastPlanSaved = false;
+            confirmBtn.disabled = true;
+            $('autoExportCsvBtn').disabled = true;
+            $('autoOpenWeekBtn').hidden = true;
+            const badge = $('autoResultState');
+            badge.textContent = 'Chưa xếp thử';
+            badge.className = 'hpuni-ux-state idle';
+            $('autoResultStats').replaceChildren();
+            table.replaceChildren();
+            warnings.replaceChildren();
+            summary.textContent = 'Chưa có phương án mới. Nhấn Xếp lịch thử để xem kết quả.';
+            if (text) showMessage(text);
+        }
+
+        // 3. LẤY NGÀY HÔM NAY
+        function todayString() {
+
+            const date = new Date();
+
+            const year = date.getFullYear();
+
+            const month = String(
+                date.getMonth() + 1
+            ).padStart(2, "0");
+
+            const day = String(
+                date.getDate()
+            ).padStart(2, "0");
+
+            return `${year}-${month}-${day}`;
+        }
+
+        if (!weekInput.value) {
+            weekInput.value = todayString();
+        }
+
+        invalidatePreview(
+            "Chọn thông tin rồi nhấn Xếp lịch thử. " +
+            "Thao tác này chưa lưu dữ liệu."
+        );
+
+        // 4. ĐỌC THÔNG TIN FORM
+        function readRequest() {
+
+            return {
+                semester: $("autoSemester").value,
+
+                academicYear:
+                    $("autoYear").value.trim(),
+
+                weekStart: weekInput.value
+            };
+        }
+
+        // 5. GỌI BACKEND
+        async function postJson(path, data) {
+
+            const response = await fetch(
+                API + path,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify(data)
+                }
+            );
+
+            const raw = await response.text();
+
+            let result;
+
+            try {
+                result = raw ? JSON.parse(raw) : {};
+            } catch {
+                throw new Error(
+                    "API không trả về JSON hợp lệ. " +
+                    "HTTP " + response.status
+                );
+            }
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result.detail ||
+                    result.message ||
+                    result.error ||
+                    "Lỗi HTTP " + response.status
+                );
+            }
+
+            return result;
+        }
+
+        // 6. Trình bày kết quả dễ đọc như V2, không thay đổi dữ liệu server.
+        function renderPlan(plan, saved = false) {
+            lastPlan = plan;
+            lastPlanSaved = saved;
+            table.replaceChildren();
+            warnings.replaceChildren();
+            const suggestions = Array.isArray(plan.suggestions) ? plan.suggestions : [];
+            const notes = Array.isArray(plan.unscheduled) ? plan.unscheduled : [];
+            const count = value => Number.isFinite(Number(value)) ? Number(value) : 0;
+            const existing = count(plan.existingSessions);
+            const needed = count(plan.neededSessions);
+            const badge = $('autoResultState');
+            badge.className = 'hpuni-ux-state ' + (saved ? 'saved' : 'preview');
+            badge.textContent = saved ? '✓ Đã lưu' : '◌ Chưa lưu · Bản xem trước';
+            summary.textContent = `Tuần ${plan.weekStart ?? '–'} · ${suggestions.length} buổi đề xuất · ${notes.length} cảnh báo`;
+            confirmBtn.disabled = saved || !previewToken || suggestions.length === 0;
+            $('autoExportCsvBtn').disabled = suggestions.length === 0;
+            $('autoOpenWeekBtn').hidden = !saved;
+            const stats = $('autoResultStats');
+            stats.replaceChildren();
+            [
+                ['Đã có trong tuần', existing],
+                ['Cần bổ sung', needed],
+                [saved ? 'Vừa lưu' : 'Có thể xếp thử', suggestions.length],
+                ['Chưa xếp được', notes.length]
+            ].forEach(([label, value]) => {
+                const tile = document.createElement('div');
+                tile.className = 'hpuni-ux-stat';
+                const small = document.createElement('span');
+                small.textContent = label;
+                const strong = document.createElement('strong');
+                strong.textContent = value;
+                tile.append(small, strong);
+                stats.append(tile);
+            });
+
+            if (!suggestions.length) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 7;
+                td.className = 'hpuni-ux-empty-row';
+                td.textContent = 'Không có buổi mới. Kiểm tra học phần hoặc các ràng buộc bên dưới.';
+                tr.append(td);
+                table.append(tr);
+            }
+            const dateVN = str => {
+                const parts = String(str ?? '').split('-');
+                return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : String(str ?? '');
+            };
+            suggestions.forEach(item => {
+                const tr = document.createElement('tr');
+                const vals = [
+                    dateVN(item.sessionDate),
+                    `${String(item.startTime ?? '').slice(0,5)} – ${String(item.endTime ?? '').slice(0,5)}`,
+                    item.courseName ?? '', item.groupCode ?? '', item.teacherName ?? '', item.roomCode ?? ''
+                ];
+                vals.forEach((value, i) => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    if (i === 2) td.className = 'hpuni-ux-bold-subject';
+                    if (i === 0 || i === 1) td.className = 'hpuni-ux-keep';
+                    if (i === 5) td.className = 'hpuni-ux-room-badge';
+                    tr.append(td);
+                });
+                const explanation = document.createElement('td');
+                const details = document.createElement('details');
+                details.className = 'hpuni-ux-explanation';
+                const title = document.createElement('summary');
+                title.textContent = 'Giải thích';
+                const p = document.createElement('p');
+                p.textContent = String(item.explanation || 'Chưa có thông tin giải thích cho phương án này.');
+                details.append(title,p);
+                explanation.append(details);
+                tr.append(explanation);
+                table.append(tr);
+            });
+            if (!notes.length) {
+                const li = document.createElement('li');
+                li.className = 'hpuni-ux-note-ok';
+                li.textContent = '✓ Không có cảnh báo.';
+                warnings.append(li);
+            } else {
+                notes.forEach(note => {
+                    const li = document.createElement('li');
+                    li.textContent = String(note);
+                    warnings.append(li);
+                });
+            }
+        }
+
+        // File CSV này là ĐỀ XUẤT, khác file CSV lịch đã lưu ở trang Thời khóa biểu.
+        function exportPlanCsv() {
+            if (!lastPlan || !Array.isArray(lastPlan.suggestions) || !lastPlan.suggestions.length) return;
+            const cell = value => {
+                let text = String(value ?? '');
+                if (/^[\s]*[=+@-]/.test(text)) text = "'" + text;
+                return '"' + text.replace(/"/g,'""') + '"';
+            };
+            const rows = [['Trạng thái', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Môn', 'Lớp', 'Giảng viên', 'Phòng', 'Lý do'],
+                ...lastPlan.suggestions.map(x => [lastPlanSaved ? 'ĐÃ LƯU' : 'CHƯA LƯU', x.sessionDate, x.startTime, x.endTime,
+                    x.courseName, x.groupCode, x.teacherName, x.roomCode, x.explanation])];
+            const content = '\ufeff' + rows.map(row=>row.map(cell).join(',')).join('\r\n');
+            const url = URL.createObjectURL(new Blob([content], {type:'text/csv;charset=utf-8'}));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `HPUNI_de_xuat_${lastPlan.weekStart ?? 'lich'}.csv`;
+            document.body.append(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+            showMessage('Đã xuất CSV. Dữ liệu trong file có ghi rõ trạng thái CHƯA LƯU/ĐÃ LƯU.');
+        }
+        $('autoExportCsvBtn').addEventListener('click', exportPlanCsv);
+        $('autoOpenWeekBtn').addEventListener('click', () => {
+            if (!lastPlanSaved || !lastPlan) return;
+            const picker = $('weekPicker');
+            picker.value = lastPlan.weekStart;
+            showPage('schedule');
+        });
+
+        // 7. NÚT XẾP LỊCH THỬ
+        previewBtn.addEventListener(
+            "click",
+            async function () {
+
+                invalidatePreview(
+                    "Đang tính toán phương án xếp lịch..."
+                );
+
+                const request = readRequest();
+
+                if (!request.weekStart ||
+                    !/^20\d{2}-20\d{2}$/.test(
+                        request.academicYear
+                    )) {
+
+                    showMessage(
+                        "Nhập năm học dạng 2026-2027 " +
+                        "và chọn tuần cần xếp.",
+                        true
+                    );
+
+                    return;
+                }
+
+                previewBtn.disabled = true;
+
+                try {
+
+                    const result = await postJson(
+                        "/preview",
+                        request
+                    );
+
+                    if (!result.plan) {
+                        throw new Error(
+                            "Backend không trả về plan."
+                        );
+                    }
+
+                    // Nếu người dùng đã đổi thông tin
+                    // trong lúc chờ, không dùng kết quả cũ
+                    if (JSON.stringify(readRequest()) !==
+                        JSON.stringify(request)) {
+
+                        invalidatePreview(
+                            "Thông tin đã thay đổi. " +
+                            "Hãy xếp lịch thử lại."
+                        );
+
+                        return;
+                    }
+
+                    renderPlan(result.plan, false);
+
+                    previewToken = result.token || null;
+
+                    confirmBtn.disabled =
+                        !previewToken ||
+                        result.plan.suggestions.length === 0;
+
+                    if (result.plan.suggestions.length > 0) {
+
+                        showMessage(
+                            "Đã xếp thử thành công. " +
+                            "CHƯA lưu vào database. " +
+                            "Hãy kiểm tra kết quả bên dưới."
+                        );
+
+                    } else if (
+                        result.plan.neededSessions === 0
+                    ) {
+
+                        showMessage(
+                            "Không còn buổi cần xếp. " +
+                            "Lịch đã đủ hoặc chưa có học phần."
+                        );
+
+                    } else {
+
+                        showMessage(
+                            "Chưa tìm được phương án phù hợp. " +
+                            "Xem các cảnh báo bên dưới.",
+                            true
+                        );
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Xếp lịch thử lỗi:",
+                        error
+                    );
+
+                    showMessage(
+                        "Không thể xếp lịch thử: " +
+                        error.message,
+                        true
+                    );
+
+                } finally {
+
+                    previewBtn.disabled = false;
+                }
+            }
+        );
+
+        // 8. NÚT XÁC NHẬN LƯU LỊCH
+        confirmBtn.addEventListener(
+            "click",
+            async function () {
+
+                if (!previewToken) {
+
+                    showMessage(
+                        "Bạn cần xếp lịch thử trước.",
+                        true
+                    );
+
+                    return;
+                }
+
+                const accepted = confirm(
+                    "Bạn có chắc muốn lưu các buổi " +
+                    "đã được đề xuất vào thời khóa biểu?"
+                );
+
+                if (!accepted) return;
+
+                const token = previewToken;
+
+                confirmBtn.disabled = true;
+                previewBtn.disabled = true;
+
+                showMessage(
+                    "Đang xác nhận và lưu lịch học..."
+                );
+
+                try {
+
+                    const result = await postJson(
+                        "/confirm",
+                        { token: token }
+                    );
+
+                    renderPlan(result, true);
+
+                    previewToken = null;
+
+                    // Chuyển lịch tuần tới tuần vừa lưu
+                    const picker = $("weekPicker");
+
+                    if (picker) {
+                        picker.value = result.weekStart;
+                    }
+
+                    showMessage(
+                        `Đã lưu thành công ` +
+                        `${result.suggestions.length} buổi. ` +
+                        `Mở Thời khóa biểu để kiểm tra.`
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Xác nhận lịch lỗi:",
+                        error
+                    );
+
+                    invalidatePreview();
+
+                    showMessage(
+                        "Không thể lưu lịch: " +
+                        error.message +
+                        ". Hãy xếp thử lại.",
+                        true
+                    );
+
+                } finally {
+
+                    previewBtn.disabled = false;
+                    confirmBtn.disabled = true;
+                }
+            }
+        );
+
+        // 9. THAY ĐỔI THÔNG TIN => HỦY XÁC NHẬN CŨ
+        [
+            "autoSemester",
+            "autoYear",
+            "autoWeek"
+        ].forEach(id => {
+
+            const field = $(id);
+
+            const onChange = () => {
+
+                invalidatePreview(
+                    "Thông số đã thay đổi. " +
+                    "Hãy xếp lịch thử lại."
+                );
+
+                summary.textContent =
+                    "Chưa có phương án mới.";
+
+                table.replaceChildren();
+                warnings.replaceChildren();
+            };
+
+            field.addEventListener("input", onChange);
+            field.addEventListener("change", onChange);
+        });
+    }
+
+    // 10. CHỜ HTML TẢI XONG
+    if (document.readyState === "loading") {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initAutoSchedule,
+            { once: true }
+        );
+
+    } else {
+
+        initAutoSchedule();
+    }
+
+})();

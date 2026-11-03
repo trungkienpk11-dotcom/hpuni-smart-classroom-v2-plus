@@ -6,22 +6,35 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>HPUNI Smart Classroom</title>
+    <title>HPUNI · Smart Classroom V2+ Tự Học</title>
+    <meta name="theme-color" content="#0b1020">
 
-    <link rel="stylesheet" href="/style.css">
-    <script src="/app.js" defer></script>
+    <link rel="stylesheet" href="/style.css?v=3">
+    <link rel="stylesheet" href="/v2-upgrade.css?v=3">
+    <link rel="stylesheet" href="/capybara-chat.css?v=2">
+    <link rel="stylesheet" href="/v2-dashboard-legacy.css?v=1">
+    <link rel="stylesheet" href="/v2-report-legacy.css?v=1">
+    <link rel="stylesheet" href="/v2-schedule-ux.css?v=consolidated1">
+    <script src="/app.js?v=consolidated1" defer></script>
+
+    <script src="/scheduling-rules.js?v=4" defer></script>
+    <script src="/capybara-chat.js?v=3" defer></script>
+    <script src="/v2-upgrade.js?v=consolidated1" defer></script>
+    <script src="/v2-dashboard-legacy.js?v=1" defer></script>
+
 </head>
 
 <body>
+<div id="v2Backdrop" class="v2-backdrop" hidden></div>
 <div class="app">
 
     <!-- THANH ĐIỀU HƯỚNG -->
     <aside class="sidebar">
 
         <div class="brand">
-            <div class="brand-logo">HP</div>
+            <div class="brand-logo"><img src="/capybara-idle.webp" alt="Linh vật HPUNI"></div>
             <div>
-                <h2>HPUNI</h2>
+                <h2>HPUNI <span class="v2-pill">V2+</span></h2>
                 <p>Smart Classroom</p>
             </div>
         </div>
@@ -61,18 +74,32 @@
 
         </nav>
 
-        <p class="menu-label">SẮP PHÁT TRIỂN</p>
+        <p class="menu-label">LỊCH HỌC & CÔNG CỤ</p>
 
 
         <button class="nav-item" data-page="schedule">
             ◷ Thời khóa biểu
         </button>
 
-        <div class="nav-disabled">✦ Xếp lịch tự động</div>
-        <div class="nav-disabled">◉ Trợ lý AI</div>
+
+        <button class="nav-item" data-page="autoSchedule">
+            ✦ Xếp lịch tự động
+        </button>
+
+
+        <button class="nav-item" data-page="availability">⌕ Tìm phòng trống</button>
+        <button class="nav-item" data-page="reports">▥ Thống kê & báo cáo</button>
+
+        <button
+                type="button"
+                class="nav-item"
+                id="capySidebarOpen">
+            ◉ Trợ lý AI
+        </button>
+
 
         <div class="sidebar-footer">
-            Dự án học tập HPUNI
+           <span class="footer-icon">HP</span><span><strong>Không gian giáo vụ</strong><small>HPUNI · Dự án học tập</small></span>
         </div>
 
     </aside>
@@ -81,11 +108,17 @@
     <div class="workspace">
 
         <header class="topbar">
+            <button class="mobile-menu-toggle" type="button" id="v2Menu" aria-label="Mở menu">☰</button>
             <div>
                 <span class="top-caption">QUẢN LÝ ĐÀO TẠO</span>
                 <h1 id="pageTitle">Tổng quan</h1>
             </div>
 
+            <div class="v2-header-actions">
+              <div class="v2-search-wrap"><input id="v2Search" type="search" placeholder="Tìm phòng, giảng viên, môn học..." aria-label="Tìm kiếm" autocomplete="off"><div id="v2SearchResults" class="v2-search-results" hidden></div></div>
+              <button type="button" id="v2Theme" class="v2-icon-btn" title="Đổi sáng/tối">☀</button>
+              <span id="v2ApiStatus" class="v2-status">● Nội bộ</span>
+            </div>
             <div class="user-profile">
                 <span class="avatar">AD</span>
                 <span>Quản trị viên</span>
@@ -97,38 +130,139 @@
             <!-- TRANG DASHBOARD -->
             <section id="dashboardPage" class="page">
 
-                <div class="welcome">
-                    <h2>Chào mừng đến HPUNI Smart Classroom</h2>
-                    <p>
-                        Hệ thống quản lý lịch và phòng học
-                        thông minh, tích hợp AI.
-                    </p>
-                </div>
+                <div class="legacy-overview-shell">
+                    <div class="legacy-hero-grid">
+                        <section class="legacy-hero-card">
+                            <span class="legacy-eyebrow">QUẢN LÝ LỊCH HỌC THÔNG MINH</span>
+                            <h2>Xin chào, chào mừng đến HPUNI 👋</h2>
+                            <p>
+                                Không gian quản lý phòng học, giảng viên, thời khóa biểu và đề xuất xếp lịch
+                                phù hợp. Trợ lý capybara hpuni luôn sẵn sàng hỗ trợ bạn.
+                            </p>
+                            <div class="legacy-hero-actions">
+                                <button type="button" class="legacy-primary" data-go="schedule">▦ Xem thời khóa biểu</button>
+                                <button type="button" class="legacy-success" data-go="autoSchedule">✦ Xếp lịch tự động</button>
+                            </div>
+                        </section>
 
-                <div class="stats">
-                    <div class="stat-card">
-                        <p>Tổng phòng học</p>
-                        <h2 id="totalRooms">0</h2>
+                        <section class="legacy-assistant-card">
+                            <span class="legacy-eyebrow">CAPYBARA HPUNI</span>
+                            <h3>Hỏi nhanh, làm việc nhẹ hơn.</h3>
+                            <p>
+                                Tra cứu phòng trống, lịch học, thống kê và điều hướng chức năng
+                                bằng tiếng Việt.
+                            </p>
+                            <button type="button" id="dashboardOpenCapybara" class="legacy-chat-btn">☁ Trò chuyện ngay</button>
+                        </section>
                     </div>
 
-                    <div class="stat-card">
-                        <p>Phòng có máy chiếu</p>
-                        <h2 id="projectorRooms">0</h2>
+                    <div class="legacy-kpi-grid">
+                        <article class="legacy-kpi-card">
+                            <div class="legacy-kpi-top"><span class="legacy-kpi-icon">▥</span><span class="legacy-kpi-tag">Cơ sở vật chất</span></div>
+                            <p>Tổng số phòng học</p>
+                            <h3 id="totalRooms">0</h3>
+                            <small>Dữ liệu phòng của khoa</small>
+                        </article>
+
+                        <article class="legacy-kpi-card">
+                            <div class="legacy-kpi-top"><span class="legacy-kpi-icon">♙</span><span class="legacy-kpi-tag">Đội ngũ</span></div>
+                            <p>Giảng viên</p>
+                            <h3 id="dashTeacherCount">0</h3>
+                            <small>Nhân sự đang quản lý</small>
+                        </article>
+
+                        <article class="legacy-kpi-card">
+                            <div class="legacy-kpi-top"><span class="legacy-kpi-icon">▣</span><span class="legacy-kpi-tag">Đào tạo</span></div>
+                            <p>Lớp học phần</p>
+                            <h3 id="dashOfferingCount">0</h3>
+                            <small>Các học phần đã khai báo</small>
+                        </article>
+
+                        <article class="legacy-kpi-card">
+                            <div class="legacy-kpi-top"><span class="legacy-kpi-icon">◷</span><span class="legacy-kpi-tag">Thời khóa biểu</span></div>
+                            <p>Buổi học tuần này</p>
+                            <h3 id="dashSessionCount">0</h3>
+                            <small>Buổi học trong dữ liệu</small>
+                        </article>
                     </div>
 
-                    <div class="stat-card">
-                        <p>Phòng máy tính</p>
-                        <h2 id="computerRooms">0</h2>
+                    <div class="legacy-content-grid">
+                        <section class="panel legacy-panel-block">
+                            <div class="legacy-panel-head">
+                                <div>
+                                    <h3>Thời khóa biểu tuần này</h3>
+                                    <p id="legacyDashWeekLabel">Đang tải dữ liệu tuần hiện tại...</p>
+                                </div>
+                                <button type="button" class="legacy-mini-btn" data-go="schedule">Xem chi tiết →</button>
+                            </div>
+                            <div id="legacyDashWeekList" class="legacy-week-list">
+                                <p class="legacy-empty">Đang tải lịch học tuần này...</p>
+                            </div>
+                        </section>
+
+                        <section class="panel legacy-panel-block">
+                            <div class="legacy-panel-head">
+                                <div>
+                                    <h3>Thao tác nhanh</h3>
+                                    <p>Các tác vụ sử dụng thường xuyên</p>
+                                </div>
+                            </div>
+                            <div class="legacy-quick-grid">
+                                <button id="goRooms" type="button" class="legacy-quick-tile">
+                                    <span class="legacy-quick-icon">▤</span>
+                                    <strong>Quản lý phòng học</strong>
+                                    <small>Thêm, sửa, tìm kiếm phòng</small>
+                                </button>
+                                <button type="button" class="legacy-quick-tile" data-go="availability">
+                                    <span class="legacy-quick-icon">⌕</span>
+                                    <strong>Tìm phòng còn trống</strong>
+                                    <small>Theo giờ và sĩ số</small>
+                                </button>
+                                <button type="button" class="legacy-quick-tile" data-go="autoSchedule">
+                                    <span class="legacy-quick-icon">✦</span>
+                                    <strong>Xếp lịch tự động</strong>
+                                    <small>Xem và duyệt phương án</small>
+                                </button>
+                                <button type="button" class="legacy-quick-tile" data-go="reports">
+                                    <span class="legacy-quick-icon">▥</span>
+                                    <strong>Xem báo cáo</strong>
+                                    <small>Tình hình sử dụng phòng</small>
+                                </button>
+                            </div>
+                        </section>
                     </div>
-                </div>
 
-                <div class="panel">
-                    <h3>Thao tác nhanh</h3>
-                    <p>Quản lý cơ sở vật chất của khoa.</p>
+                    <div class="legacy-content-grid legacy-bottom-grid">
+                        <section class="panel legacy-panel-block">
+                            <div class="legacy-panel-head">
+                                <div>
+                                    <h3>Phân bổ lịch trong tuần</h3>
+                                    <p>Biểu đồ số buổi được xếp theo từng ngày</p>
+                                </div>
+                                <span id="legacyDashSessionBadge" class="legacy-badge">0 buổi</span>
+                            </div>
+                            <div id="v2DashChart" class="v2-chart"><p>Đang tải...</p></div>
+                        </section>
 
-                    <button id="goRooms" class="primary-btn">
-                        Mở quản lý phòng học
-                    </button>
+                        <section class="panel legacy-panel-block">
+                            <div class="legacy-panel-head">
+                                <div>
+                                    <h3>Phòng được sử dụng nhiều</h3>
+                                    <p>Đếm theo buổi học đã lưu</p>
+                                </div>
+                                <button type="button" class="legacy-mini-btn" data-go="reports">Báo cáo →</button>
+                            </div>
+                            <div id="v2DashRooms" class="legacy-room-usage"></div>
+                            <div class="legacy-note-box">
+                                <strong>Lưu ý:</strong> Đây là thống kê theo thời khóa biểu, chưa phải số liệu đo người ra vào phòng thực tế.
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="legacy-hidden-stats" aria-hidden="true">
+                        <span id="projectorRooms">0</span>
+                        <span id="computerRooms">0</span>
+                    </div>
                 </div>
             </section>
 
@@ -360,45 +494,281 @@
             </section>
 
             <!-- TRANG THỜI KHÓA BIỂU -->
-            <section id="schedulePage" class="page hidden">
-
-                <div class="section-header">
+            <section id="schedulePage" class="page hidden hpuni-schedule-page">
+                <div class="section-header hpuni-ux-page-header">
                     <div>
+                        <span class="hpuni-ux-overline">QUẢN LÝ LỊCH HỌC · HPUNI</span>
                         <h2>Thời khóa biểu</h2>
-                        <p>Quản lý lịch học và phân phòng theo tuần.</p>
+                        <p>Xem lịch theo tuần, lọc theo phòng, lớp hoặc giảng viên và quản lý từng buổi học.</p>
+                    </div>
+                    <div class="hpuni-ux-header-actions">
+                        <button type="button" id="scheduleExportCsv" class="secondary-btn">↓ Xuất CSV</button>
+                        <button type="button" id="addSessionBtn" class="primary-btn">＋ Thêm buổi học</button>
+                    </div>
+                </div>
+                <div class="panel hpuni-ux-schedule-panel">
+                    <div class="hpuni-ux-panel-top">
+                        <div>
+                            <h3>Lịch học theo tuần</h3>
+                            <p class="hpuni-ux-helper">Chỉ hiển thị lịch đã lưu trong hệ thống. Lịch xếp thử chưa xuất hiện tại đây.</p>
+                        </div>
+                        <div class="schedule-toolbar hpuni-ux-week-controls">
+                            <button type="button" id="prevWeekBtn" class="secondary-btn">← Tuần trước</button>
+                            <input type="date" id="weekPicker" aria-label="Chọn ngày trong tuần cần xem">
+                            <button type="button" id="nextWeekBtn" class="secondary-btn">Tuần sau →</button>
+                            <button type="button" id="scheduleTodayBtn" class="secondary-btn">Tuần này</button>
+                        </div>
+                    </div>
+                    <div class="hpuni-ux-filterbar" aria-label="Bộ lọc thời khóa biểu">
+                        <label for="scheduleFilterRoom"><span>Phòng học</span><select id="scheduleFilterRoom"><option value="">Tất cả phòng</option></select></label>
+                        <label for="scheduleFilterGroup"><span>Lớp sinh viên</span><select id="scheduleFilterGroup"><option value="">Tất cả lớp</option></select></label>
+                        <label for="scheduleFilterTeacher"><span>Giảng viên</span><select id="scheduleFilterTeacher"><option value="">Tất cả giảng viên</option></select></label>
+                        <button type="button" class="secondary-btn" id="scheduleResetFilters">Xóa lọc</button>
+                        <button type="button" class="secondary-btn" id="scheduleRefreshBtn">↻ Làm mới</button>
+                        <span id="scheduleSessionCount" class="hpuni-ux-count" aria-live="polite">0 buổi</span>
+                    </div>
+                    <div class="hpuni-ux-week-heading">
+                        <h3 id="scheduleWeekLabel">Lịch học theo tuần</h3>
+                        <span>Thứ Hai – Chủ Nhật</span>
+                    </div>
+                    <div class="schedule-scroll hpuni-ux-calendar-wrap">
+                        <div id="weekGrid" class="schedule-week hpuni-ux-week-grid"></div>
+                    </div>
+                    <p id="scheduleMessage" class="message hpuni-ux-message" role="status" aria-live="polite"></p>
+                </div>
+            </section>
+
+            <!-- TRANG XẾP LỊCH TỰ ĐỘNG -->
+
+            <!-- NÂNG CẤP V2: TÌM PHÒNG TRỐNG THEO GIỜ -->
+            <section id="availabilityPage" class="page hidden">
+              <div class="section-header"><div><h2>Tìm phòng trống</h2><p>Kiểm tra phòng theo ngày, khung giờ, sức chứa và thiết bị — chỉ đọc dữ liệu đã lưu.</p></div></div>
+              <div class="panel"><form id="v2FreeForm" class="v2-form-grid">
+                <label>Ngày học<input required id="v2FreeDate" type="date"></label>
+                <label>Bắt đầu<input required id="v2FreeStart" type="time" value="07:00"></label>
+                <label>Kết thúc<input required id="v2FreeEnd" type="time" value="09:00"></label>
+                <label>Sức chứa tối thiểu<input required id="v2FreeCapacity" type="number" min="1" max="10000" value="40"></label>
+                <label class="v2-check"><input type="checkbox" id="v2FreeComputers"> Có máy tính</label>
+                <label class="v2-check"><input type="checkbox" id="v2FreeProjector"> Có máy chiếu</label>
+                <button class="primary-btn" type="submit">⌕ Tìm phòng phù hợp</button>
+              </form><div id="v2FreeMessage" aria-live="polite"></div><div id="v2FreeResults" class="v2-room-grid"></div></div>
+            </section>
+            <!-- NÂNG CẤP V2: BÁO CÁO -->
+            <section id="reportsPage" class="page hidden">
+              <div class="section-header report-legacy-header">
+                <div>
+                  <span class="legacy-eyebrow">AI SMART CLASSROOM · HPUNI</span>
+                  <h2>Thống kê & báo cáo</h2>
+                  <p>Theo dõi số buổi học và phân bố lịch sử dụng phòng của khoa.</p>
+                </div>
+                <button type="button" id="v2ExportCsv" class="secondary-btn">↓ Xuất báo cáo CSV</button>
+              </div>
+
+              <div class="panel report-legacy-shell">
+                <div class="report-legacy-top">
+                  <div>
+                    <h3>Báo cáo theo tuần</h3>
+                    <p>Cập nhật từ thời khóa biểu đã lưu</p>
+                  </div>
+                  <div class="report-legacy-toolbar">
+                    <button type="button" id="v2ReportPrevWeek" class="secondary-btn small-btn">←</button>
+                    <span id="v2ReportRange" class="report-legacy-range">Đang tải...</span>
+                    <button type="button" id="v2ReportNextWeek" class="secondary-btn small-btn">→</button>
+                  </div>
+                </div>
+
+                <div class="report-legacy-filters">
+                  <label>Chọn tuần
+                    <input type="date" id="v2ReportWeek">
+                  </label>
+                  <button type="button" id="v2RefreshReport" class="secondary-btn">Làm mới</button>
+                </div>
+
+                <div id="v2ReportKpis" class="report-legacy-kpis"></div>
+
+                <div class="report-legacy-grid">
+                  <div class="report-legacy-card">
+                    <h3>Số buổi theo ngày</h3>
+                    <div id="v2ReportChart" class="v2-chart"></div>
+                    <p id="v2ReportChartCaption" class="report-legacy-caption"></p>
+                  </div>
+                  <div class="report-legacy-card">
+                    <h3>Phòng được xếp nhiều nhất</h3>
+                    <div id="v2ReportRanking" class="report-legacy-ranking"></div>
+                  </div>
+                </div>
+
+                <div class="report-legacy-note">
+                  Báo cáo tính theo lịch học đã được lưu trong cơ sở dữ liệu. Không đại diện cho tỷ lệ sử dụng thực tế theo cảm biến, điểm danh hoặc đặt phòng ngoài hệ thống.
+                </div>
+              </div>
+
+              <div class="panel report-legacy-shell report-legacy-detail">
+                <div class="report-legacy-top compact">
+                  <div>
+                    <h3>Chi tiết theo phòng</h3>
+                    <p>Thống kê toàn bộ phòng</p>
+                  </div>
+                  <span id="v2ReportRoomCount" class="legacy-badge">0 phòng</span>
+                </div>
+                <div class="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Mã phòng</th>
+                        <th>Tên phòng</th>
+                        <th>Sức chứa</th>
+                        <th>Buổi được xếp</th>
+                      </tr>
+                    </thead>
+                    <tbody id="v2ReportTable"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+            <section id="autoSchedulePage" class="page hidden hpuni-auto-page">
+                <div class="section-header hpuni-ux-page-header">
+                    <div>
+                        <span class="hpuni-ux-overline">THUẬT TOÁN HỖ TRỢ · HPUNI</span>
+                        <h2>Xếp lịch tự động</h2>
+                        <p>Đề xuất lịch có kiểm tra ràng buộc. Xem trước và kiểm duyệt trước khi ghi vào database.</p>
+                    </div>
+                    <span class="hpuni-ux-readonly">● Xếp thử không tự lưu</span>
+                </div>
+                <div class="hpuni-ux-steps" aria-label="Quy trình xếp lịch">
+                    <span><strong>1</strong> Chọn tuần và học kỳ</span>
+                    <span><strong>2</strong> Xem phương án đề xuất</span>
+                    <span><strong>3</strong> Phê duyệt &amp; lưu lịch</span>
+                </div>
+                <div class="panel hpuni-ux-settings">
+                    <div class="hpuni-ux-panel-top">
+                        <div><h3>Thiết lập xếp lịch</h3><p class="hpuni-ux-helper">Chọn thông số cho tuần cần sắp xếp. Mỗi lần đổi thông số phải xếp thử lại.</p></div>
+                    </div>
+                    <div class="auto-form">
+                        <div><label for="autoSemester">Học kỳ</label>
+                            <select id="autoSemester"><option value="HK1">Học kỳ 1</option><option value="HK2">Học kỳ 2</option><option value="HK3">Học kỳ 3</option></select>
+                        </div>
+                        <div><label for="autoYear">Năm học</label><input id="autoYear" value="2026-2027" placeholder="2026-2027" autocomplete="off"></div>
+                        <div><label for="autoWeek">Tuần cần xếp lịch</label><input id="autoWeek" type="date"></div>
+                    </div>
+                    <div class="auto-actions hpuni-ux-auto-actions">
+                        <button type="button" id="autoPreviewBtn" class="primary-btn">✦ Xếp lịch thử</button>
+                        <span class="hpuni-ux-action-help">Bước 1: Hệ thống chỉ tạo bản đề xuất, <strong>chưa thay đổi thời khóa biểu.</strong></span>
+                    </div>
+                    <p id="autoMessage" class="message hpuni-ux-message" role="status" aria-live="polite"></p>
+                </div>
+                <div class="panel auto-results hpuni-ux-results">
+                    <div class="hpuni-ux-results-head">
+                        <div><h3>Kết quả đề xuất</h3><p class="hpuni-ux-helper">Kiểm tra phòng, lớp, ngày giờ và lý do đề xuất trước khi lưu.</p></div>
+                        <div class="hpuni-ux-result-actions">
+                            <span id="autoResultState" class="hpuni-ux-state idle" aria-live="polite">Chưa xếp thử</span>
+                            <button type="button" id="autoExportCsvBtn" class="secondary-btn" disabled>↓ CSV đề xuất</button>
+                            <button type="button" id="autoApplyBtn" class="hpuni-ux-confirm" disabled>✓ Phê duyệt &amp; lưu lịch</button>
+                        </div>
+                    </div>
+                    <p id="autoSummary" class="hpuni-ux-summary">Chưa có phương án nào. Nhấn Xếp lịch thử để xem kết quả.</p>
+                    <div id="autoResultStats" class="hpuni-ux-result-stats" aria-live="polite"></div>
+                    <div class="table-wrapper hpuni-ux-auto-table-wrap">
+                        <table class="hpuni-ux-auto-table" aria-label="Các buổi học đề xuất">
+                            <thead><tr>
+                                <th>Ngày</th><th>Thời gian</th><th>Môn học</th><th>Lớp</th>
+                                <th>Giảng viên</th><th>Phòng</th><th>Giải thích</th>
+                            </tr></thead>
+                            <tbody id="autoTable"><tr><td colspan="7" class="hpuni-ux-empty-row">Chưa có đề xuất. Hãy nhấn Xếp lịch thử.</td></tr></tbody>
+                        </table>
+                    </div>
+                    <div class="hpuni-ux-warnings">
+                        <div class="hpuni-ux-warnings-head"><h3>Cảnh báo / Chưa xếp được</h3>
+                        <button type="button" id="autoOpenWeekBtn" class="secondary-btn" hidden>Xem thời khóa biểu đã lưu →</button></div>
+                        <ul id="autoUnscheduled"><li class="hpuni-ux-note-ok">Chưa có cảnh báo.</li></ul>
+                    </div>
+                </div>
+
+                <!--: THIET LAP QUY TAC XEP LICH -->
+                <div class="panel rules-panel">
+
+                    <h3>Quy tắc xếp lịch nâng cao</h3>
+
+                    <h4>Khai báo lịch bận giảng viên</h4>
+
+                    <div class="rules-grid">
+
+                        <div>
+                            <label for="ruleTeacher">Giảng viên</label>
+                            <select id="ruleTeacher"></select>
+                        </div>
+
+                        <div>
+                            <label for="ruleDate">Ngày bận</label>
+                            <input id="ruleDate" type="date">
+                        </div>
+
+                        <div>
+                            <label for="ruleStart">Từ giờ</label>
+                            <input id="ruleStart" type="time" value="07:00">
+                        </div>
+
+                        <div>
+                            <label for="ruleEnd">Đến giờ</label>
+                            <input id="ruleEnd" type="time" value="11:15">
+                        </div>
+
                     </div>
 
-                    <button id="addSessionBtn" class="primary-btn">
-                        + Thêm buổi học
+                    <label for="ruleReason">Lý do</label>
+                    <input
+                            id="ruleReason"
+                            placeholder="Ví dụ: Giảng viên bận họp"
+                            maxlength="200"
+                    >
+
+                    <button
+                            id="saveBusyBtn"
+                            type="button"
+                            class="primary-btn">
+                        + Thêm lịch bận
                     </button>
-                </div>
 
-                <div class="panel">
+                    <div id="teacherBusyList"></div>
 
-                    <div class="schedule-toolbar">
+                    <hr>
 
-                        <button id="prevWeekBtn" class="secondary-btn">
-                            ← Tuần trước
-                        </button>
+                    <h4>Yêu cầu phòng học theo môn</h4>
 
-                        <input type="date" id="weekPicker"
-                               aria-label="Chọn ngày xem lịch">
+                    <div class="rules-grid">
 
-                        <button id="nextWeekBtn" class="secondary-btn">
-                            Tuần sau →
-                        </button>
+                        <div>
+                            <label for="ruleCourse">Môn học</label>
+                            <select id="ruleCourse"></select>
+                        </div>
+
+                        <div class="rules-checks">
+
+                            <label>
+                                <input type="checkbox" id="needsComputers">
+                                Bắt buộc có máy tính
+                            </label>
+
+                            <label>
+                                <input type="checkbox" id="needsProjector">
+                                Bắt buộc có máy chiếu
+                            </label>
+
+                        </div>
 
                     </div>
 
-                    <h3 id="scheduleWeekLabel"></h3>
+                    <button
+                            id="saveCourseRuleBtn"
+                            type="button"
+                            class="primary-btn">
+                        Lưu yêu cầu thiết bị
+                    </button>
 
-                    <div class="schedule-scroll">
-                        <div id="weekGrid" class="schedule-week"></div>
-                    </div>
-
-                    <p id="scheduleMessage" class="message"></p>
+                    <p id="rulesMessage" class="message"></p>
 
                 </div>
+
             </section>
 
         </main>
