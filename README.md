@@ -476,3 +476,5 @@ Bản hiện tại phù hợp cho mục đích **học tập và minh họa nghi
 ---
 
 **HPUNI Smart Classroom V2+** — mã nguồn phục vụ mục đích học tập, nghiên cứu và phát triển đồ án. Vui lòng cập nhật thông tin tác giả/nhóm thực hiện và đường dẫn repository chính thức nếu cần.
+## 17.TÁC GIẢ
+-Đặng Trung Kiên
