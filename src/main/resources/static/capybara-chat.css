@@ -61,3 +61,94 @@
 @media (prefers-reduced-motion: reduce) {
   #capy-launcher, #capy-launcher .capy-image { transition: none; }
 }
+
+/* Bài 10.3 - chỉ bổ sung điều khiển chat, không thay giao diện hệ thống */
+#capy-clear {
+    background: #ffffff21; border: 0; color: #fff; border-radius: 8px;
+    width: 34px; height: 34px; font-size: 20px; cursor: pointer;
+}
+#capy-clear:hover, #capy-clear:focus-visible { background: #ffffff3d; }
+#capy-window .capy-header-copy { min-width: 0; }
+#capy-window .capy-header-copy span { display:block; line-height:1.35; }
+#capy-messages .capy-bubble .capy-action {
+    display: inline-flex; align-items:center; margin-top:11px; padding:9px 12px;
+    border:1px solid #5a8bda; background:#26477b; color:#eff7ff;
+    border-radius:10px; font-size:12px; font-weight:700; cursor:pointer;
+}
+#capy-messages .capy-bubble .capy-action:hover,
+#capy-messages .capy-bubble .capy-action:focus-visible { background:#3465aa; }
+#capy-messages .capy-typing { opacity:.8; font-style:italic; }
+#capy-window #capy-suggestions { overflow-y:auto; max-height:108px; }
+#capy-window #capy-suggestions button { line-height:1.35; text-align:left; }
+@media (max-width:480px) {
+  #capy-window .capy-header { padding:10px; gap:7px; }
+  #capy-window .capy-avatar { width:32px;height:32px;flex-basis:32px; }
+}
+
+/* Bài 10.4 – nút menu chức năng, giữ nguyên layout V2+ bên ngoài khung chat */
+#capy-nav-toggle {
+    background:#ffffff21;border:0;color:#fff;border-radius:8px;
+    width:34px;height:34px;font-size:22px;cursor:pointer;flex-shrink:0;
+}
+#capy-nav-toggle:hover,#capy-nav-toggle:focus-visible{background:#ffffff3d}
+#capy-nav-panel {
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;
+    background:#14233b;border-bottom:1px solid #344661;padding:10px;
+    max-height:185px;overflow:auto;flex-shrink:0;
+}
+#capy-nav-panel[hidden]{display:none}
+#capy-nav-panel button {
+    background:#1f3554;border:1px solid #38557a;color:#edf4ff;
+    padding:8px 7px;border-radius:9px;text-align:left;
+    font-size:11px;cursor:pointer;line-height:1.35;
+}
+#capy-nav-panel button:hover,#capy-nav-panel button:focus-visible{background:#345981}
+#capy-messages .capy-bot {white-space:pre-wrap}
+#capy-messages .capy-action {white-space:normal;max-width:100%;text-align:left}
+
+/* Bài 10.6 - gợi ý ngữ cảnh trang. Không ảnh hưởng sidebar, lịch hoặc báo cáo. */
+#capy-window #capy-page-tip {
+  display:block;width:100%;flex-shrink:0;border:0;border-bottom:1px solid #34507a;
+  background:#152b49;color:#cde8ff;cursor:pointer;text-align:left;
+  padding:9px 15px;font-size:12px;font-weight:650;line-height:1.4;
+}
+#capy-window #capy-page-tip:hover,#capy-window #capy-page-tip:focus-visible {
+  background:#1d3b63;color:#fff;outline-offset:-2px;
+}
+
+/* Bài 10.8 – công tắc Ollama độc lập trong cửa sổ capybara, không đụng sidebar. */
+#capy-window .capy-ai-control {
+    display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 5px;
+    padding: 9px 13px; background: #12243d; border-bottom: 1px solid #304767;
+    flex-shrink: 0;
+}
+#capy-window .capy-ai-switch {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: #eaf3ff; font-size: 12px; font-weight: 650; cursor: pointer;
+}
+#capy-window #capy-ai-toggle {
+    position: absolute; opacity: 0; width: 1px; height: 1px;
+}
+#capy-window .capy-ai-track {
+    position: relative; display: inline-block; width: 35px; height: 20px;
+    background: #475569; border-radius: 20px; flex-shrink: 0;
+    transition: background .16s ease;
+}
+#capy-window .capy-ai-track::after {
+    content: ''; position: absolute; left: 3px; top: 3px;
+    width: 14px; height: 14px; border-radius: 50%; background: #fff;
+    transition: transform .16s ease;
+}
+#capy-window #capy-ai-toggle:checked + .capy-ai-track { background: #0d9488; }
+#capy-window #capy-ai-toggle:checked + .capy-ai-track::after { transform: translateX(15px); }
+#capy-window #capy-ai-toggle:focus-visible + .capy-ai-track { outline: 3px solid #93c5fd; outline-offset: 3px; }
+#capy-window #capy-ai-toggle:disabled + .capy-ai-track { opacity: .6; cursor: wait; }
+#capy-window #capy-ai-refresh {
+    border: 1px solid #38557a; border-radius: 7px; background: #1c3656;
+    color: #e0f2fe; padding: 3px 9px; cursor: pointer; font-size: 17px; margin-left: auto;
+}
+#capy-window #capy-ai-refresh:disabled { opacity: .5; cursor: wait; }
+#capy-window #capy-ai-status { color: #9cc7e9; font-size: 10px; width: 100%; line-height: 1.35; }
+@media (prefers-reduced-motion: reduce) {
+    #capy-window .capy-ai-track, #capy-window .capy-ai-track::after { transition: none; }
+}
