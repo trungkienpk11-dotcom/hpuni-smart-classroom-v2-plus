@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.smartclassroom</groupId>
-	<artifactId>hpuni-smart-classroom</artifactId>
+	<artifactId>hpuni-smart-classroom-v2-plus</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
+	<name>HPUNI Smart Classroom V2+</name>
 	<description/>
 	<url/>
 	<licenses>
