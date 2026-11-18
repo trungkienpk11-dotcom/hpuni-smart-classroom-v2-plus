@@ -1,4 +1,4 @@
-/* HPUNI Bài 10.8: ưu tiên Java/H2, chọn Ollama theo từng trình duyệt. */
+/ưu tiên Java/H2, chọn Ollama theo từng trình duyệt. */
 (() => {
     'use strict';
 
