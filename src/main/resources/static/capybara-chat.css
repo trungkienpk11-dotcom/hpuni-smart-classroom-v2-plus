@@ -1,4 +1,4 @@
-/* Bai 10.1: styles limited to the floating chatbot to avoid affecting existing pages */
+/* styles limited to the floating chatbot to avoid affecting existing pages */
 #capy-launcher {
     position: fixed; z-index: 900; right: 22px; bottom: 20px;
     width: 118px; height: 118px; padding: 0; border: 1px solid #e0d4c9; border-radius: 22px; overflow: hidden;
@@ -62,7 +62,7 @@
   #capy-launcher, #capy-launcher .capy-image { transition: none; }
 }
 
-/* Bài 10.3 - chỉ bổ sung điều khiển chat, không thay giao diện hệ thống */
+/* chỉ bổ sung điều khiển chat, không thay giao diện hệ thống */
 #capy-clear {
     background: #ffffff21; border: 0; color: #fff; border-radius: 8px;
     width: 34px; height: 34px; font-size: 20px; cursor: pointer;
@@ -85,7 +85,7 @@
   #capy-window .capy-avatar { width:32px;height:32px;flex-basis:32px; }
 }
 
-/* Bài 10.4 – nút menu chức năng, giữ nguyên layout V2+ bên ngoài khung chat */
+/* nút menu chức năng, giữ nguyên layout V2+ bên ngoài khung chat */
 #capy-nav-toggle {
     background:#ffffff21;border:0;color:#fff;border-radius:8px;
     width:34px;height:34px;font-size:22px;cursor:pointer;flex-shrink:0;
