@@ -68,18 +68,109 @@
     });
   }
   function alertText(id,text,error=false){const x=$(id);x.textContent=text;x.className=error?'v2-alert bad':'v2-alert';}
-  async function findAvailability(e){e.preventDefault();$('v2FreeResults').replaceChildren();const params=new URLSearchParams({
-    date:$('v2FreeDate').value,start:$('v2FreeStart').value,end:$('v2FreeEnd').value,
-    capacity:$('v2FreeCapacity').value,computers:String($('v2FreeComputers').checked),projector:String($('v2FreeProjector').checked)
-  });if(params.get('start')>=params.get('end'))return alertText('v2FreeMessage','Giờ bắt đầu phải trước giờ kết thúc.',true);
-    try{alertText('v2FreeMessage','Đang kiểm tra lịch đã lưu...');const rows=await api('/api/upgrade/availability?'+params);
-      alertText('v2FreeMessage',rows.length?`Tìm được ${rows.length} phòng phù hợp. Kết quả dựa trên lịch đã lưu; lịch chưa xác nhận không được tính.`:'Không có phòng phù hợp trong khoảng giờ đã chọn.');
-      rows.forEach(x=>{let div=document.createElement('article');div.className='v2-free-room';
-        const name=document.createElement('h3');name.textContent=`${x.code} · ${x.name}`;
-        const p=document.createElement('p');p.textContent=`${x.capacity} chỗ · ${x.computers?'Có máy tính':'Không có máy tính'} · ${x.projector?'Có máy chiếu':'Không có máy chiếu'}`;
-        div.append(name,p);$('v2FreeResults').append(div);
-      });
-    }catch(err){alertText('v2FreeMessage',`Không thể kiểm tra: ${err.message}`,true);}
+  // Trạng thái phòng được tính từ lịch ĐÃ LƯU, không tính phương án xếp thử.
+  let roomStatusData = null;
+  function renderRoomStatuses() {
+    const target = $('v2FreeResults');
+    if (!target) return;
+    target.replaceChildren();
+    if (!roomStatusData) return;
+    const selected = $('v2FreeFilter')?.value || 'all';
+    const list = roomStatusData.rooms.filter(room =>
+      selected === 'all' ||
+      (selected === 'available' && room.status === 'AVAILABLE') ||
+      (selected === 'occupied' && room.status === 'OCCUPIED') ||
+      (selected === 'unsuitable' && room.status === 'UNSUITABLE'));
+    if (!list.length) {
+      const empty = document.createElement('p');
+      empty.className = 'v2-alert';
+      empty.textContent = 'Không có phòng thuộc trạng thái này trong khoảng thời gian đã chọn.';
+      target.append(empty);
+      return;
+    }
+    const labels = {AVAILABLE:'Còn trống', OCCUPIED:'Đã có lịch', UNSUITABLE:'Không phù hợp'};
+    for (const room of list) {
+      const card = document.createElement('article');
+      card.className = 'v2-free-room v2-room-status-card status-' + room.status.toLowerCase();
+
+      const head = document.createElement('div');
+      head.className = 'v2-room-status-heading';
+      const name = document.createElement('h3');
+      name.textContent = room.code + ' · ' + room.name;
+      const badge = document.createElement('span');
+      badge.className = 'v2-room-status-badge';
+      badge.textContent = labels[room.status] || room.status;
+      head.append(name, badge);
+      card.append(head);
+
+      const detail = document.createElement('p');
+      detail.textContent = room.capacity + ' chỗ · ' + (room.roomType || 'Phòng học') +
+        ' · ' + (room.computers ? 'Có máy tính' : 'Không có máy tính') +
+        ' · ' + (room.projector ? 'Có máy chiếu' : 'Không có máy chiếu');
+      card.append(detail);
+
+      if (room.reasons && room.reasons.length) {
+        const reasons = document.createElement('p');
+        reasons.className = 'v2-room-reasons';
+        reasons.textContent = room.reasons.join(' · ');
+        card.append(reasons);
+      }
+      if (room.conflicts && room.conflicts.length) {
+        const title = document.createElement('strong');
+        title.className = 'v2-conflict-title';
+        title.textContent = 'Lịch học trùng với khoảng tìm:';
+        card.append(title);
+        const listEl = document.createElement('ul');
+        listEl.className = 'v2-conflict-list';
+        for (const session of room.conflicts) {
+          const item = document.createElement('li');
+          item.textContent = (session.startTime || '') + '–' + (session.endTime || '') +
+            ' · ' + (session.courseName || session.courseCode || 'Học phần') +
+            ' · ' + (session.groupCode || 'Lớp chưa rõ') +
+            ' · ' + (session.teacherName || 'Giảng viên chưa rõ');
+          listEl.append(item);
+        }
+        card.append(listEl);
+      }
+      target.append(card);
+    }
+  }
+  async function findAvailability(e) {
+    e.preventDefault();
+    roomStatusData = null;
+    $('v2FreeResults').replaceChildren();
+    const params = new URLSearchParams({
+      date:$('v2FreeDate').value, start:$('v2FreeStart').value, end:$('v2FreeEnd').value,
+      capacity:$('v2FreeCapacity').value, computers:String($('v2FreeComputers').checked),
+      projector:String($('v2FreeProjector').checked)
+    });
+    if (!params.get('date') || !params.get('start') || !params.get('end') ||
+        params.get('start') >= params.get('end')) {
+      return alertText('v2FreeMessage','Ngày/giờ không hợp lệ: giờ bắt đầu phải trước giờ kết thúc.',true);
+    }
+    if (Number(params.get('capacity')) < 1 || Number(params.get('capacity')) > 10000) {
+      return alertText('v2FreeMessage','Sức chứa phải từ 1 đến 10.000.',true);
+    }
+    try {
+      alertText('v2FreeMessage','Đang kiểm tra phòng và các buổi học đã lưu...');
+      const data = await api('/api/upgrade/room-status?' + params);
+      roomStatusData = data;
+      const summary = $('v2RoomSummary');
+      if (summary) {
+        summary.hidden = false;
+        summary.textContent = 'Tổng ' + data.totalRooms + ' phòng · ' +
+          data.availableCount + ' còn trống và phù hợp · ' +
+          data.occupiedCount + ' đã có lịch trùng giờ · ' +
+          data.unsuitableCount + ' trống nhưng không đáp ứng điều kiện.';
+      }
+      alertText('v2FreeMessage',
+        'Kết quả theo ' + params.get('date') + ', ' + params.get('start') +
+        '–' + params.get('end') + '. Chỉ tính lịch đã lưu trong thời khóa biểu.');
+      renderRoomStatuses();
+    } catch (err) {
+      if ($('v2RoomSummary')) $('v2RoomSummary').hidden = true;
+      alertText('v2FreeMessage','Không thể kiểm tra phòng: ' + err.message,true);
+    }
   }
   // Search toàn hệ thống, chỉ hiển thị dữ liệu chữ (không chèn HTML từ DB).
   const pages={rooms:'searchRoom',teachers:'searchTeacher',groups:'searchGroup',courses:'searchCourse',offerings:'searchOffering'};
@@ -104,6 +195,7 @@
     document.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.go)));
     $('v2FreeDate').value=today;$('v2ReportWeek').value=monday(today);
     $('v2FreeForm').addEventListener('submit',findAvailability);
+    if ($('v2FreeFilter')) $('v2FreeFilter').addEventListener('change',renderRoomStatuses);
     $('v2RefreshReport').addEventListener('click',()=>report($('v2ReportWeek').value).catch(err=>alertText('v2ReportKpis',err.message,true)));
     $('v2ReportWeek').addEventListener('change',()=>report($('v2ReportWeek').value).catch(err=>alertText('v2ReportKpis',err.message,true)));
     if($('v2ReportPrevWeek')) $('v2ReportPrevWeek').addEventListener('click',()=>report(shiftIso($('v2ReportWeek').value || monday(today),-7)).catch(err=>alertText('v2ReportKpis',err.message,true)));
