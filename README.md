@@ -296,6 +296,24 @@ ollama stop qwen2.5:3b
 
 Việc này không xóa model đã tải. Muốn tắt hẳn máy chủ Ollama, chọn **Quit Ollama** tại khay hệ thống Windows. Khi Ollama tắt, **website và chatbot Java vẫn hoạt động**.
 
+### Trạng thái phòng đã xếp lịch và phòng còn trống
+
+Trong trang **Tìm phòng trống**, chọn ngày, giờ bắt đầu/kết thúc, sức chứa tối thiểu và thiết bị cần có, sau đó bấm tìm kiếm. Kết quả hiện **tất cả phòng** theo ba trạng thái:
+
+- **Còn trống**: không có buổi học đã lưu giao khoảng tìm kiếm và đáp ứng sức chứa/thiết bị.
+- **Đã có lịch**: có ít nhất một buổi học giao khoảng giờ chọn. Xem rõ môn học, lớp, giảng viên và giờ của buổi bị trùng; nếu còn thiếu sức chứa hoặc thiết bị, lý do vẫn được hiển thị.
+- **Không phù hợp**: không có buổi học trùng giờ nhưng thiếu sức chứa hoặc thiết bị theo bộ lọc.
+
+Có thể lọc theo từng trạng thái mà không gửi lại yêu cầu. Trạng thái **chỉ xét ngày và khoảng giờ đã chọn**, không phải phòng đang có người trong thời gian thực; buổi đã xếp lịch ở giờ khác không làm phòng bị coi là bận trong khoảng đang tra cứu. Kết quả chỉ đọc từ bảng \`schedule_sessions\` đã lưu; phương án xếp thử chưa xác nhận không được tính.
+
+API mới (phản hồi JSON gồm \`rooms\`, \`totalRooms\`, \`availableCount\`, \`occupiedCount\`, \`unsuitableCount\`):
+
+\`\`\`http
+GET /api/upgrade/room-status?date=2026-11-30&start=07:00&end=09:00&capacity=40&computers=false&projector=false
+\`\`\`
+
+API cũ \`GET /api/upgrade/availability\` vẫn giữ nguyên định dạng và chỉ trả về các phòng phù hợp. Đây là bản mở rộng tra cứu, **không tự tạo, sửa, xóa hoặc giữ chỗ phòng**.
+
 ## 11. Kiểm thử API cơ bản
 
 Các ví dụ dưới đây chạy trong PowerShell khi Spring Boot đang hoạt động.
