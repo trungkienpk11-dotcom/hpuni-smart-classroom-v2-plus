@@ -35,3 +35,30 @@ body { background:radial-gradient(ellipse 75% 75% at 83% -15%,#1d2f6050,transpar
 :root[data-hpuni-theme=light]{--bg:#eef3fa;--sidebar:#e5ebf5;--panel:#ffffff;--border:#cfd9e8;--text:#192a43;--muted:#536780;--primary:#315fd5}
 :root[data-hpuni-theme=light] body{background:#eef3fa;color:#192a43}:root[data-hpuni-theme=light] .sidebar{background:linear-gradient(#f0f4fa,#e4ecf7)}:root[data-hpuni-theme=light] .nav-item{color:#304463}:root[data-hpuni-theme=light] .nav-item.active{color:#fff}:root[data-hpuni-theme=light] .menu-label{color:#597196}:root[data-hpuni-theme=light] .brand p,:root[data-hpuni-theme=light] .sidebar-footer small{color:#60728d}:root[data-hpuni-theme=light] .topbar{background:#f9fbffec}:root[data-hpuni-theme=light] #v2Search{background:#fff;color:#18314f}:root[data-hpuni-theme=light] .v2-icon-btn{color:#1d3d65;background:#fff}:root[data-hpuni-theme=light] .welcome{background:#e0e9f9}:root[data-hpuni-theme=light] .stat-card{background:#fff}:root[data-hpuni-theme=light] .stat-card h2{color:#1c3157}:root[data-hpuni-theme=light] .v2-dashboard-grid .panel{background:#fff}:root[data-hpuni-theme=light] .v2-usage-row{color:#304968}:root[data-hpuni-theme=light] .v2-mini-stat{background:#e9f0fb}:root[data-hpuni-theme=light] .v2-mini-stat strong{color:#263d66}:root[data-hpuni-theme=light] .v2-bar-track{background:#dce6f3}:root[data-hpuni-theme=light] .v2-bar-slot b{color:#263d66}:root[data-hpuni-theme=light] .v2-free-room{background:#edf4ff}:root[data-hpuni-theme=light] .v2-free-room p{color:#445d7c}:root[data-hpuni-theme=light] #v2SearchResults{background:white}:root[data-hpuni-theme=light] .v2-search-item{color:#1b2c45}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* Room availability: compact, accessible statuses for all scheduled/free rooms. */
+.v2-room-summary{margin:15px 0 10px;padding:13px 15px;border-radius:11px;background:#172f4b;border:1px solid #52729c;color:#e0f0ff;font-size:13px;line-height:1.6}
+.v2-room-summary[hidden]{display:none}
+.v2-room-filter-wrap{display:flex;align-items:center;gap:12px;margin:12px 0 3px;flex-wrap:wrap;color:#c3d1ed;font-size:13px}
+.v2-room-filter-wrap select{min-width:210px;max-width:100%;background:#0d172a;border:1px solid #49618a;color:#e9f0ff;border-radius:10px;padding:10px 12px}
+.v2-room-status-heading{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.v2-room-status-heading h3{margin:0 0 11px}
+.v2-room-status-badge{white-space:nowrap;font-size:11px;font-weight:800;letter-spacing:.01em;border-radius:20px;padding:6px 9px;border:1px solid currentColor}
+.v2-room-status-card.status-available{border-color:#29bc97}
+.v2-room-status-card.status-available .v2-room-status-badge{color:#86e8cc;background:#12382f}
+.v2-room-status-card.status-occupied{border-color:#dc9a63}
+.v2-room-status-card.status-occupied .v2-room-status-badge{color:#ffd0a5;background:#513323}
+.v2-room-status-card.status-unsuitable{border-color:#9bacc6}
+.v2-room-status-card.status-unsuitable .v2-room-status-badge{color:#d0d9ec;background:#2e3a50}
+.v2-room-reasons{color:#ffca9e!important;font-weight:600}
+.v2-conflict-title{display:block;color:#e7f1ff;font-size:12px;margin-top:10px}
+.v2-conflict-list{margin:6px 0 0;padding-left:18px;line-height:1.7;color:#d5e5ff;font-size:12px}
+:root[data-hpuni-theme=light] .v2-room-summary{background:#e3edf9;color:#263d66;border-color:#91b2d8}
+:root[data-hpuni-theme=light] .v2-room-filter-wrap{color:#344e72}
+:root[data-hpuni-theme=light] .v2-room-filter-wrap select{background:#fff;color:#213958}
+:root[data-hpuni-theme=light] .v2-room-reasons{color:#965013!important}
+:root[data-hpuni-theme=light] .v2-conflict-title,:root[data-hpuni-theme=light] .v2-conflict-list{color:#324a6e}
+:root[data-hpuni-theme=light] .status-available .v2-room-status-badge{color:#156349;background:#def8ed}
+:root[data-hpuni-theme=light] .status-occupied .v2-room-status-badge{color:#8b4a0b;background:#fff0da}
+:root[data-hpuni-theme=light] .status-unsuitable .v2-room-status-badge{color:#475879;background:#edf1f7}
