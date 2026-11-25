@@ -550,7 +550,18 @@
                 <label class="v2-check"><input type="checkbox" id="v2FreeComputers"> Có máy tính</label>
                 <label class="v2-check"><input type="checkbox" id="v2FreeProjector"> Có máy chiếu</label>
                 <button class="primary-btn" type="submit">⌕ Tìm phòng phù hợp</button>
-              </form><div id="v2FreeMessage" aria-live="polite"></div><div id="v2FreeResults" class="v2-room-grid"></div></div>
+              </form><div id="v2FreeMessage" aria-live="polite"></div>
+                <div id="v2RoomSummary" class="v2-room-summary" role="status" hidden></div>
+                <div class="v2-room-filter-wrap">
+                  <label for="v2FreeFilter">Hiển thị phòng</label>
+                  <select id="v2FreeFilter" aria-label="Lọc theo trạng thái phòng">
+                    <option value="all">Tất cả phòng</option>
+                    <option value="available">Còn trống và phù hợp</option>
+                    <option value="occupied">Đã có lịch trong khung giờ</option>
+                    <option value="unsuitable">Trống nhưng không phù hợp</option>
+                  </select>
+                </div>
+                <div id="v2FreeResults" class="v2-room-grid"></div></div>
             </section>
             <!-- NÂNG CẤP V2: BÁO CÁO -->
             <section id="reportsPage" class="page hidden">
