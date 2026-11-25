@@ -1,4 +1,4 @@
-/ưu tiên Java/H2, chọn Ollama theo từng trình duyệt. */
+/* Ưu tiên Java/H2, chọn Ollama theo từng trình duyệt. */
 (() => {
     'use strict';
 
